@@ -296,9 +296,7 @@ input   [C_M_AXI_DATA_PORT_BUSER_WIDTH - 1:0]   m_axi_data_port_BUSER;         /
 
 input   [127:0]                                 gemm_queue_V_V_TDATA;          // Input
 input                                           gemm_queue_V_V_TVALID;         // Input
-output                                          
-
-;         // TODO
+output                                          gemm_queue_V_V_TREADY;         // TODO
 
 input   [7:0]                                   l2g_dep_queue_V_TDATA;         // Input
 input                                           l2g_dep_queue_V_TVALID;        // Input
@@ -373,13 +371,20 @@ output                                          interrupt;                     /
 parameter    INSTRUCTION_WIDTH     = 128;
 
 // state machine code
-parameter state_idle_code          = 64'h0000_0000_0000_0001;
-parameter state_alu_start          = 64'h0000_0000_0000_0002;
-parameter state_load_uop_start     = 64'h0000_0000_0000_0004;
-parameter state_load_acc_start     = 64'h0000_0000_0000_0008;
-parameter state_gemm_start         = 64'h0000_0000_0000_0010;
-parameter state_finish_start       = 64'h0000_0000_0000_0020;
-parameter state_none               = 64'h0000_0000_0000_0040;
+parameter state_idle_code          = 16'h0001;
+parameter state_alu_start          = 16'h0002;
+parameter state_alu_end            = 16'h0004;
+parameter state_load_uop_start     = 16'h0008;
+parameter state_load_uop_end       = 16'h0010;
+parameter state_load_acc_start     = 16'h0020;
+parameter state_load_acc_end       = 16'h0040;
+parameter state_gemm_start         = 16'h0080;
+parameter state_gemm_end           = 16'h0100;
+parameter state_finish_start       = 16'h0200;
+parameter state_finish_end         = 16'h0400;
+parameter state_none               = 16'h0800;
+parameter state_dep_write          = 16'h1000;
+parameter state_end                = 16'h2000;
 
 // ===========================================================
 // Parameters END
@@ -506,13 +511,19 @@ reg   [63:0] state_machine;
 reg   [63:0] state_machine_temp;
 
 wire         is_state_idle;
-wire         is_state_idle;
 wire         is_state_alu_start;
+wire         is_state_alu_end;
 wire         is_state_load_uop_start;
+wire         is_state_load_uop_end;
 wire         is_state_load_acc_start;
+wire         is_state_load_acc_end;
 wire         is_state_gemm_start;
+wire         is_state_gemm_end;
 wire         is_state_finish_start;
+wire         is_state_finish_end;
 wire         is_state_none;
+wire         is_dep_write;
+wire         is_state_end;
 
 // Input
 
@@ -570,7 +581,7 @@ assign instruction_g2s_dep_bit    = gemm_queue_V_V_TDATA_int[8'h6];    // #! Ple
 
 // Load ACC/UOP
 assign load_memop_id              = {{gemm_queue_V_V_TDATA_int[8:7]}};    // instruction memop id
-assign load_sram_base_addr        = {{gemm_queue_V_V_TDATA_int[2300 4:9]}};   // sram base
+assign load_sram_base_addr        = {{gemm_queue_V_V_TDATA_int[24:9]}};   // sram base
 assign load_dram_base_addr        = {{gemm_queue_V_V_TDATA_int[56:25]}};  // dram base
 assign load_y_size                = {{gemm_queue_V_V_TDATA_int[79:64]}};  // load y size
 assign load_x_size                = {{gemm_queue_V_V_TDATA_int[95:80]}};  // load x size
@@ -635,6 +646,7 @@ regslice_both_l2g_dep_queue_V_U(
     .ack_out(l2g_dep_queue_V_TREADY_int),                      // TODO     
     .apdone_blk(regslice_both_l2g_dep_queue_V_U_apdone_blk)    // Gen By Module
 );
+
 // l2g_dep_queue_V_TREADY_int
 always @ (*) begin
     if (  (ap_start == 1'b1) 
@@ -675,12 +687,12 @@ always @ (*) begin
         & (s2g_dep_queue_V_TVALID_int == 1'b1)                                            // s2g dependence satisfy 
         & ((l2g_dep_queue_V_TVALID_int == 1'b1) | (instruction_l2g_dep_bit == 1'd1))      // l2g dependence satisfy or no dependence
         & (instruction_s2g_dep_bit == 1'd0)                                               // s2g dependence
-        & (1'b1 == is_state_idle))                                                           // status idle
+        & (1'b1 == is_state_idle))                                                        // status idle
         begin
             s2g_dep_queue_V_TREADY_int = 1'b1;
         end 
     else 
-        begin
+        begins
             s2g_dep_queue_V_TREADY_int = 1'b0;
         end
 end
@@ -699,11 +711,18 @@ end
 
 assign is_state_idle           = state_machine[8'd0];
 assign is_state_alu_start      = state_machine[8'd1];
-assign is_state_load_uop_start = state_machine[8'd2];
-assign is_state_load_acc_start = state_machine[8'd3];
-assign is_state_gemm_start     = state_machine[8'd4];
-assign is_state_finish_start   = state_machine[8'd5];
-assign is_state_none           = state_machine[8'd6];
+assign is_state_alu_end        = state_machine[8'd2];
+assign is_state_load_uop_start = state_machine[8'd3];
+assign is_state_load_uop_end   = state_machine[8'd4];
+assign is_state_load_acc_start = state_machine[8'd5];
+assign is_state_load_acc_end   = state_machine[8'd6];
+assign is_state_gemm_start     = state_machine[8'd7];
+assign is_state_gemm_end       = state_machine[8'd8];
+assign is_state_finish_start   = state_machine[8'd9];
+assign is_state_finish_end     = state_machine[8'd10];
+assign is_state_none           = state_machine[8'd11];
+assign is_dep_write            = state_machine[8'd12];
+assign is_state_end            = state_machine[8'd13];
 
 always @ (*) begin
     case (state_machine)
@@ -734,7 +753,7 @@ always @ (*) begin
                     state_machine_temp = state_load_uop_start;
                 end
 
-            // None
+            // None // Invalid Instruction && dependence satisty
             else if ( (ap_start == 1'b1)                                                         // start
                     & (gemm_queue_V_V_TVALID_int == 1'b1)                                        // gemm queue valid
                     & ((s2g_dep_queue_V_TVALID_int == 1'b1) | (instruction_s2g_dep_bit == 1'd0)) // s2g dependence satisfy or no dependence
@@ -802,11 +821,10 @@ always @ (*) begin
         end
     endcase
 end
-
-
 // ===========================================================
-// state machine
+// state machine end
 // ===========================================================
+
 
 
 // compute 2 load queue
@@ -878,54 +896,84 @@ compute_CONTROL_BUS_s_axi_U(
     .biases_V(biases_V)                     // Gen by Module # Add to acc dram base addr
 );
 
-// Wether Done
+// Wether Done ALL other state done
 always @ (*) begin
-    if ((1'b1 == ap_CS_fsm_state62)) begin
-        done_o = 32'd1;
-    end else if ((~((ap_start == 1'b0) | (gemm_queue_V_V_TVALID_int == 1'b0) | ((s2g_dep_queue_V_TVALID_int == 1'b0) & (instruction_s2g_dep_bit == 1'd1)) | ((l2g_dep_queue_V_TVALID_int == 1'b0) & (instruction_l2g_dep_bit == 1'd1))) & (1'b1 == is_state_idle))) begin
-        done_o = 32'd0;
-    end else begin
-        done_o = 'bx;
-    end
+    if ((1'b1 == ap_CS_fsm_state62)) 
+        begin
+            done_o = 32'd1;
+        end 
+    
+    else if (   (ap_start == 1'b1)                                                         // start
+              & (gemm_queue_V_V_TVALID_int == 1'b1)                                        // gemm queue valid
+              & ((s2g_dep_queue_V_TVALID_int == 1'b1) | (instruction_s2g_dep_bit == 1'd0)) // s2g dependence satisfy or no dependence
+              & ((l2g_dep_queue_V_TVALID_int == 1'b1) | (instruction_l2g_dep_bit == 1'd0)) // l2g dependence satisfy or no dependence
+              & (1'b1 == is_state_idle))                                                   // state idle
+        begin
+            done_o = 32'd0;  // Only when state machine start
+        end
+    else 
+        begin
+            done_o = 'bx;
+        end
 end
 
-// Done_o Valid
+// Done_o Valid signal
 always @ (*) begin
-    if (((1'b1 == ap_CS_fsm_state62) | (~((ap_start == 1'b0) | (gemm_queue_V_V_TVALID_int == 1'b0) | ((s2g_dep_queue_V_TVALID_int == 1'b0) & (instruction_s2g_dep_bit == 1'd1)) | ((l2g_dep_queue_V_TVALID_int == 1'b0) & (instruction_l2g_dep_bit == 1'd1))) & (1'b1 == is_state_idle)))) begin
-        done_o_ap_vld = 1'b1;
-    end else begin
-        done_o_ap_vld = 1'b0;
-    end
+    if ((1'b1 == ap_CS_fsm_state62)  |
+        ((ap_start == 1'b1)                                                           // start
+         & (gemm_queue_V_V_TVALID_int == 1'b1)                                        // gemm queue valid
+         & ((s2g_dep_queue_V_TVALID_int == 1'b1) | (instruction_s2g_dep_bit == 1'd0)) // s2g dependence satisfy or no dependence
+         & ((l2g_dep_queue_V_TVALID_int == 1'b1) | (instruction_l2g_dep_bit == 1'd0)) // l2g dependence satisfy or no dependence
+         & (1'b1 == is_state_idle)))
+        begin
+            done_o_ap_vld = 1'b1; // Only when state machine start
+        end 
+    else 
+        begin
+            done_o_ap_vld = 1'b0;
+        end
 end
 
-// Ready
+// Ready Write g2l & g2s
 always @ (*) begin
-    if ((~((1'b1 == ap_block_state64_io) | (regslice_both_g2s_dep_queue_V_U_apdone_blk == 1'b1) | (regslice_both_g2l_dep_queue_V_U_apdone_blk == 1'b1)) & (1'b1 == ap_CS_fsm_state64))) begin
+    if (  (1'b0 == ap_block_state64_io)
+        &  (regslice_both_g2s_dep_queue_V_U_apdone_blk == 1'b0)
+        &  (regslice_both_g2l_dep_queue_V_U_apdone_blk == 1'b0)
+        &  (1'b1 == ap_CS_fsm_state64)) begin
         ap_ready = 1'b1;
     end else begin
         ap_ready = 1'b0;
     end
 end
-// Done
+// Done Write g2l & g2s
 always @ (*) begin
-    if ((~((1'b1 == ap_block_state64_io) | (regslice_both_g2s_dep_queue_V_U_apdone_blk == 1'b1) | (regslice_both_g2l_dep_queue_V_U_apdone_blk == 1'b1)) & (1'b1 == ap_CS_fsm_state64))) begin
-        ap_done = 1'b1;
-    end else begin
-        ap_done = 1'b0;
-    end
+    if (   (1'b0 == ap_block_state64_io)
+        &  (regslice_both_g2s_dep_queue_V_U_apdone_blk == 1'b0)
+        &  (regslice_both_g2l_dep_queue_V_U_apdone_blk == 1'b0)
+        &  (1'b1 == ap_CS_fsm_state64))  
+        begin
+            ap_done = 1'b1;
+        end 
+    else 
+        begin
+            ap_done = 1'b0;
+        end
 end
+
 // Idle
 always @ (*) begin
-    if (((ap_start == 1'b0) & (1'b1 == is_state_idle))) begin
-        ap_idle = 1'b1;
-    end else begin
-        ap_idle = 1'b0;
-    end
+    if ((ap_start == 1'b0) & (1'b1 == is_state_idle))
+        begin
+            ap_idle = 1'b1;
+        end 
+    else 
+        begin
+            ap_idle = 1'b0;
+        end
 end
 // ===========================================================
 // Control End
 // ===========================================================
-
 
 // ===========================================================
 // Load uop
@@ -1079,13 +1127,12 @@ assign uop_port_ARLEN = grp_fu_1337_p4; // TODO
 // uop_port_RREADY // TODO
 always @ (*) begin
     if (((icmp_ln480_reg_16554 == 1'd0) 
-       & (1'b0 == ap_block_pp3_stage0_11001) 
+       & (1'b0 == ap_block_pp3_stage0_11001)
        & (ap_enable_reg_pp3_iter1 == 1'b1)
        & (1'b1 == ap_CS_fsm_pp3_stage0)))
-
         begin
             uop_port_RREADY = 1'b1;
-        end 
+        end
     else 
         begin
             uop_port_RREADY = 1'b0;
@@ -1170,7 +1217,7 @@ compute_data_port_m_axi_U(
     .I_ARREADY(data_port_ARREADY),          // Gen By Module
     .I_ARADDR(data_port_ARADDR),            // TODO, dram addr
     .I_ARID(1'd0),                          // Input
-    .I_ARLEN(zext_ln89_reg_12971),          // TODO, 
+    .I_ARLEN(load_acc_x_size),              // TODO, x_size
     .I_ARSIZE(3'd0),                        // Input
     .I_ARLOCK(2'd0),                        // Input
     .I_ARCACHE(4'd0),                       // Input
@@ -1181,7 +1228,7 @@ compute_data_port_m_axi_U(
     .I_ARREGION(4'd0),                      // Input
     .I_RVALID(data_port_RVALID),            // Gen By Module
     .I_RREADY(data_port_RREADY),            // TODO
-    .I_RDATA(data_port_RDATA),              // Gen By Module
+    .I_RDATA(data_port_RDATA),              // Gen By Module // ACC data 64-bit
     .I_RID(data_port_RID),                  // Gen By Module # no use
     .I_RUSER(data_port_RUSER),              // Gen By Module # no use
     .I_RRESP(data_port_RRESP),              // Gen By Module # no use
@@ -1223,16 +1270,27 @@ end
 
 assign data_port_ARADDR = zext_ln88_fu_11376_p1;
 
+// load acc x-size
+/*
+ *load_acc_x_size =  16 * 32-bit * x_size / 64-bit
+ */
 always @ (posedge ap_clk) begin
-    if ((~((ap_start == 1'b0) | (gemm_queue_V_V_TVALID_int == 1'b0) | ((s2g_dep_queue_V_TVALID_int == 1'b0) & (tmp_6_fu_1679_p3 == 1'd1)) | ((l2g_dep_queue_V_TVALID_int == 1'b0) & (tmp_4_fu_1671_p3 == 1'd1))) & (icmp_ln482_fu_1827_p2 == 1'd1) & (icmp_ln473_fu_1697_p2 == 1'd1) & (icmp_ln477_fu_1821_p2 == 1'd0) & (icmp_ln470_fu_1691_p2 == 1'd0) & (1'b1 == ap_CS_fsm_state1))) begin
-        zext_ln89_reg_12971[2:0] <= 3'b000;
-        zext_ln89_reg_12971[18 : 3] <= zext_ln89_fu_1855_p1[18 : 3];
-        zext_ln89_reg_12971[31:19] <= 13'b0000000000000;
+    if (  (ap_start == 1'b1)                                                         // start
+        & (gemm_queue_V_V_TVALID_int == 1'b1)                                        // gemm queue valid
+        & ((s2g_dep_queue_V_TVALID_int == 1'b1) | (instruction_s2g_dep_bit == 1'd0)) // s2g dependence satisfy or no dependence
+        & ((l2g_dep_queue_V_TVALID_int == 1'b1) | (instruction_l2g_dep_bit == 1'd0)) // l2g dependence satisfy or no dependence
+        & (is_load_opcode == 1'd1)
+        & (is_acc_memid   == 1'd1)
+        & (is_uop_memid == 1'd0)
+        & (is_finish_opcode == 1'd0)
+        & (1'b1 == is_state_idle))
+    begin
+        load_acc_x_size <= {{13'b0000000000000}, {load_x_size}, {3'd0}};
     end
 end
 
 always @ (*) begin
-    if (((icmp_ln89_reg_16475 == 1'd0) & (1'b0 == ap_block_pp2_stage0_11001) & (ap_enable_reg_pp2_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp2_stage0))) begin
+    if (((icmp_ln89_reg_16475 == 1'd0) & (1'b0 == ap_block_pp2_stage0_11001) & (ap_enable_reg_pp2_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp2_stage0))) begin // < x_size, 
         data_port_RREADY = 1'b1;
     end else begin
         data_port_RREADY = 1'b0;
@@ -1244,7 +1302,32 @@ end
 
 
 // ===========================================================
-// Read Uop
+// Write & Read Acc END
+// ===========================================================
+compute_acc_mem_V #(
+    .DataWidth( 512 ),
+    .AddressRange( 2048 ),
+    .AddressWidth( 11 ))
+acc_mem_V_U(
+    .clk(ap_clk),                           // Input
+    .reset(ap_rst_n_inv),                   // Input
+    .address0(acc_mem_V_address0),          // TODO // Address
+    .ce0(acc_mem_V_ce0),                    // TODO
+    .we0(acc_mem_V_we0),                    // TODO
+    .d0(acc_mem_V_d0),                      // TODO Write Data // gemm or alu
+    .q0(acc_mem_V_q0),                      // Gen By Module 
+    .address1(acc_mem_V_address1),          // TODO
+    .ce1(acc_mem_V_ce1),                    // TODO Enable
+    .we1(acc_mem_V_we1),                    // TODO
+    .d1(acc_mem_V_d1),                      // TODO Write Data // Load Data to ACC mem
+    .q1(acc_mem_V_q1)                       // Gen By Module
+);
+// ===========================================================
+// Write & Read ACC end
+// ===========================================================
+
+// ===========================================================
+//  Write & Read Acc END
 // ===========================================================
 compute_uop_mem_V #(
     .DataWidth( 32 ),
@@ -1259,6 +1342,7 @@ uop_mem_V_U(
     .d0(uop_port_addr_read_reg_16568),      // TODO
     .q0(uop_mem_V_q0)                       // Gen By Module. Uop Data
 );
+
 
 always @ (*) begin
     if (((1'b0 == ap_block_pp3_stage0) & (ap_enable_reg_pp3_iter2 == 1'b1))) begin
@@ -1294,29 +1378,6 @@ always @ (posedge ap_clk) begin
     end
 end
 
-// ===========================================================
-// Read Uop END
-// ===========================================================
-
-// Read ACC
-compute_acc_mem_V #(
-    .DataWidth( 512 ),
-    .AddressRange( 2048 ),
-    .AddressWidth( 11 ))
-acc_mem_V_U(
-    .clk(ap_clk),                           // Input
-    .reset(ap_rst_n_inv),                   // Input
-    .address0(acc_mem_V_address0),          // TODO
-    .ce0(acc_mem_V_ce0),                    // TODO
-    .we0(acc_mem_V_we0),                    // TODO
-    .d0(acc_mem_V_d0),                      // TODO Write Data
-    .q0(acc_mem_V_q0),                      // Gen By Module 
-    .address1(acc_mem_V_address1),          // TODO
-    .ce1(acc_mem_V_ce1),                    // TODO Enable
-    .we1(acc_mem_V_we1),                    // TODO
-    .d1(acc_mem_V_d1),                      // TODO Write Data
-    .q1(acc_mem_V_q1)                       // Gen By Module
-);
 
 always @ (*) begin
     if (((1'b0 == ap_block_pp1_stage0) & (ap_enable_reg_pp1_iter9 == 1'b1))) begin

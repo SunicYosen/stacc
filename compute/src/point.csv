@@ -25,3 +25,4 @@ ap_ST_fsm_state38,state_load_acc_start
 ap_ST_fsm_state19,state_none
 ap_ST_fsm_state20,state_gemm_start
 ap_ST_fsm_state62,state_finish_start
+zext_ln89_reg_12971, load_acc_x_size 
