@@ -109,28 +109,24 @@ reg[15:0] out_mem_V_WEN_A;
 (* fsm_encoding = "none" *) reg   [9:0] ap_CS_fsm;
 wire    ap_CS_fsm_state1;
 reg  signed [31:0] uop_iter_index_reg;
-reg   [0:0] gemm_reset_reg_4748;
-reg   [13:0] inst_iter_out_reg;
+reg   [0:0] gemm_reset_reg;
 wire   [13:0] it_out_fu_1137_p2;
 reg   [13:0] it_out_reg_4761;
 wire    ap_CS_fsm_state2;
-reg   [13:0] inst_iter_in_reg;
-wire   [0:0] icmp_iter_out;
-wire   [0:0] icmp_iter_in;
+
+wire    icmp_iter_out;
+wire    icmp_iter_in;
+wire    icmp_uop_index_wire;
+reg     icmp_uop_index_reg;
 wire    ap_CS_fsm_state3;
 wire   [13:0] it_in_fu_1157_p2;
 reg   [13:0] it_in_reg_4775;
-wire   [31:0] uop_begin_wire0;
-wire   [31:0] uop_end_wire0;
 reg   [31:0] uop_end_reg0;
 wire   [11:0] dst_offset_out_V_fu_1202_p2;
 wire   [11:0] src_offset_out_V_fu_1221_p2;
 wire   [10:0] wgt_offset_out_V_fu_1240_p2;
-wire   [0:0] icmp_uop_index_wire;
-reg   [0:0] icmp_uop_index_reg;
 wire    ap_CS_fsm_pp0_stage0;
 wire    ap_CS_fsm_pp0_stage1;
-wire   [63:0] zext_ln544_2_fu_1321_p1;
 reg   [63:0] zext_ln544_2_reg_4829;
 reg   [10:0] acc_mem_V_1_addr_reg_4834;
 wire    ap_CS_fsm_pp0_stage2;
@@ -144,6 +140,7 @@ wire   [11:0] src_offset_in_V_1_fu_4710_p2;
 wire   [10:0] wgt_offset_in_V_1_fu_4729_p2;
 reg    ap_condition_pp0_exit_iter0_state4;
 reg    ap_enable_reg_pp0_iter1;
+
 wire   [7:0] gemm_core_i_tensor_0_0;
 wire   [7:0] gemm_core_i_tensor_0_1;
 wire   [7:0] gemm_core_i_tensor_0_2;
@@ -160,6 +157,7 @@ wire   [7:0] gemm_core_i_tensor_0_12;
 wire   [7:0] gemm_core_i_tensor_0_13;
 wire   [7:0] gemm_core_i_tensor_0_14;
 wire   [7:0] gemm_core_i_tensor_0_15;
+
 wire   [7:0] gemm_core_w_tensor_0_0;
 wire   [7:0] gemm_core_w_tensor_0_1;
 wire   [7:0] gemm_core_w_tensor_0_2;
@@ -176,6 +174,7 @@ wire   [7:0] gemm_core_w_tensor_0_12;
 wire   [7:0] gemm_core_w_tensor_0_13;
 wire   [7:0] gemm_core_w_tensor_0_14;
 wire   [7:0] gemm_core_w_tensor_0_15;
+
 wire   [7:0] gemm_core_w_tensor_1_0;
 wire   [7:0] gemm_core_w_tensor_1_1;
 wire   [7:0] gemm_core_w_tensor_1_2;
@@ -192,6 +191,7 @@ wire   [7:0] gemm_core_w_tensor_1_12;
 wire   [7:0] gemm_core_w_tensor_1_13;
 wire   [7:0] gemm_core_w_tensor_1_14;
 wire   [7:0] gemm_core_w_tensor_1_15;
+
 wire   [7:0] gemm_core_w_tensor_2_0;
 wire   [7:0] gemm_core_w_tensor_2_1;
 wire   [7:0] gemm_core_w_tensor_2_2;
@@ -208,6 +208,7 @@ wire   [7:0] gemm_core_w_tensor_2_12;
 wire   [7:0] gemm_core_w_tensor_2_13;
 wire   [7:0] gemm_core_w_tensor_2_14;
 wire   [7:0] gemm_core_w_tensor_2_15;
+
 wire   [7:0] gemm_core_w_tensor_3_0;
 wire   [7:0] gemm_core_w_tensor_3_1;
 wire   [7:0] gemm_core_w_tensor_3_2;
@@ -224,6 +225,7 @@ wire   [7:0] gemm_core_w_tensor_3_12;
 wire   [7:0] gemm_core_w_tensor_3_13;
 wire   [7:0] gemm_core_w_tensor_3_14;
 wire   [7:0] gemm_core_w_tensor_3_15;
+
 wire   [7:0] gemm_core_w_tensor_4_0;
 wire   [7:0] gemm_core_w_tensor_4_1;
 wire   [7:0] gemm_core_w_tensor_4_2;
@@ -240,6 +242,7 @@ wire   [7:0] gemm_core_w_tensor_4_12;
 wire   [7:0] gemm_core_w_tensor_4_13;
 wire   [7:0] gemm_core_w_tensor_4_14;
 wire   [7:0] gemm_core_w_tensor_4_15;
+
 wire   [7:0] gemm_core_w_tensor_5_0;
 wire   [7:0] gemm_core_w_tensor_5_1;
 wire   [7:0] gemm_core_w_tensor_5_2;
@@ -256,6 +259,7 @@ wire   [7:0] gemm_core_w_tensor_5_12;
 wire   [7:0] gemm_core_w_tensor_5_13;
 wire   [7:0] gemm_core_w_tensor_5_14;
 wire   [7:0] gemm_core_w_tensor_5_15;
+
 wire   [7:0] gemm_core_w_tensor_6_0;
 wire   [7:0] gemm_core_w_tensor_6_1;
 wire   [7:0] gemm_core_w_tensor_6_2;
@@ -272,6 +276,7 @@ wire   [7:0] gemm_core_w_tensor_6_12;
 wire   [7:0] gemm_core_w_tensor_6_13;
 wire   [7:0] gemm_core_w_tensor_6_14;
 wire   [7:0] gemm_core_w_tensor_6_15;
+
 wire   [7:0] gemm_core_w_tensor_7_0;
 wire   [7:0] gemm_core_w_tensor_7_1;
 wire   [7:0] gemm_core_w_tensor_7_2;
@@ -288,6 +293,7 @@ wire   [7:0] gemm_core_w_tensor_7_12;
 wire   [7:0] gemm_core_w_tensor_7_13;
 wire   [7:0] gemm_core_w_tensor_7_14;
 wire   [7:0] gemm_core_w_tensor_7_15;
+
 wire   [7:0] gemm_core_w_tensor_8_0;
 wire   [7:0] gemm_core_w_tensor_8_1;
 wire   [7:0] gemm_core_w_tensor_8_2;
@@ -304,6 +310,7 @@ wire   [7:0] gemm_core_w_tensor_8_12;
 wire   [7:0] gemm_core_w_tensor_8_13;
 wire   [7:0] gemm_core_w_tensor_8_14;
 wire   [7:0] gemm_core_w_tensor_8_15;
+
 wire   [7:0] gemm_core_w_tensor_9_0;
 wire   [7:0] gemm_core_w_tensor_9_1;
 wire   [7:0] gemm_core_w_tensor_9_2;
@@ -320,6 +327,7 @@ wire   [7:0] gemm_core_w_tensor_9_12;
 wire   [7:0] gemm_core_w_tensor_9_13;
 wire   [7:0] gemm_core_w_tensor_9_14;
 wire   [7:0] gemm_core_w_tensor_9_15;
+
 wire   [7:0] gemm_core_w_tensor_10_0;
 wire   [7:0] gemm_core_w_tensor_10_1;
 wire   [7:0] gemm_core_w_tensor_10_2;
@@ -336,6 +344,7 @@ wire   [7:0] gemm_core_w_tensor_10_12;
 wire   [7:0] gemm_core_w_tensor_10_13;
 wire   [7:0] gemm_core_w_tensor_10_14;
 wire   [7:0] gemm_core_w_tensor_10_15;
+
 wire   [7:0] gemm_core_w_tensor_11_0;
 wire   [7:0] gemm_core_w_tensor_11_1;
 wire   [7:0] gemm_core_w_tensor_11_2;
@@ -352,6 +361,7 @@ wire   [7:0] gemm_core_w_tensor_11_12;
 wire   [7:0] gemm_core_w_tensor_11_13;
 wire   [7:0] gemm_core_w_tensor_11_14;
 wire   [7:0] gemm_core_w_tensor_11_15;
+
 wire   [7:0] gemm_core_w_tensor_12_0;
 wire   [7:0] gemm_core_w_tensor_12_1;
 wire   [7:0] gemm_core_w_tensor_12_2;
@@ -368,6 +378,7 @@ wire   [7:0] gemm_core_w_tensor_12_12;
 wire   [7:0] gemm_core_w_tensor_12_13;
 wire   [7:0] gemm_core_w_tensor_12_14;
 wire   [7:0] gemm_core_w_tensor_12_15;
+
 wire   [7:0] gemm_core_w_tensor_13_0;
 wire   [7:0] gemm_core_w_tensor_13_1;
 wire   [7:0] gemm_core_w_tensor_13_2;
@@ -384,6 +395,7 @@ wire   [7:0] gemm_core_w_tensor_13_12;
 wire   [7:0] gemm_core_w_tensor_13_13;
 wire   [7:0] gemm_core_w_tensor_13_14;
 wire   [7:0] gemm_core_w_tensor_13_15;
+
 wire   [7:0] gemm_core_w_tensor_14_0;
 wire   [7:0] gemm_core_w_tensor_14_1;
 wire   [7:0] gemm_core_w_tensor_14_2;
@@ -400,6 +412,7 @@ wire   [7:0] gemm_core_w_tensor_14_12;
 wire   [7:0] gemm_core_w_tensor_14_13;
 wire   [7:0] gemm_core_w_tensor_14_14;
 wire   [7:0] gemm_core_w_tensor_14_15;
+
 wire   [7:0] gemm_core_w_tensor_15_0;
 wire   [7:0] gemm_core_w_tensor_15_1;
 wire   [7:0] gemm_core_w_tensor_15_2;
@@ -416,6 +429,7 @@ wire   [7:0] gemm_core_w_tensor_15_12;
 wire   [7:0] gemm_core_w_tensor_15_13;
 wire   [7:0] gemm_core_w_tensor_15_14;
 wire   [7:0] gemm_core_w_tensor_15_15;
+
 wire   [31:0] gemm_core_a_tensor_0_0;
 wire   [31:0] gemm_core_a_tensor_0_1;
 wire   [31:0] gemm_core_a_tensor_0_2;
@@ -432,7 +446,7 @@ wire   [31:0] gemm_core_a_tensor_0_12;
 wire   [31:0] gemm_core_a_tensor_0_13;
 wire   [31:0] gemm_core_a_tensor_0_14;
 wire   [31:0] gemm_core_a_tensor_0_15;
-wire    gemm_core_gemm_reset;
+wire          gemm_core_gemm_reset;
 wire   [31:0] gemm_core_acc_out_0;
 wire   [31:0] gemm_core_acc_out_1;
 wire   [31:0] gemm_core_acc_out_2;
@@ -449,55 +463,58 @@ wire   [31:0] gemm_core_acc_out_12;
 wire   [31:0] gemm_core_acc_out_13;
 wire   [31:0] gemm_core_acc_out_14;
 wire   [31:0] gemm_core_acc_out_15;
-wire   [7:0] gemm_core_output_0;
-wire   [7:0] gemm_core_output_1;
-wire   [7:0] gemm_core_output_2;
-wire   [7:0] gemm_core_output_3;
-wire   [7:0] gemm_core_output_4;
-wire   [7:0] gemm_core_output_5;
-wire   [7:0] gemm_core_output_6;
-wire   [7:0] gemm_core_output_7;
-wire   [7:0] gemm_core_output_8;
-wire   [7:0] gemm_core_output_9;
-wire   [7:0] gemm_core_output_10;
-wire   [7:0] gemm_core_output_11;
-wire   [7:0] gemm_core_output_12;
-wire   [7:0] gemm_core_output_13;
-wire   [7:0] gemm_core_output_14;
-wire   [7:0] gemm_core_output_15;
-reg   [11:0] dst_offset_in_V_reg_720;
-reg   [11:0] src_offset_in_V_reg_732;
-reg   [10:0] wgt_offset_in_V_reg_744;
-reg   [13:0] iter_out_reg;
-reg   [11:0] dst_offset_in_0_reg_767;
-reg   [11:0] src_offset_in_0_reg_778;
-reg   [10:0] wgt_offset_in_0_reg_789;
-reg   [13:0] iter_in_reg;
-reg  signed [31:0] uop_current_index_reg;
-wire  signed [63:0] sext_ln35_fu_1251_p1;
-wire   [63:0] zext_ln544_fu_1310_p1;
-wire   [63:0] zext_ln544_1_fu_1316_p1;
-wire   [31:0] wgt_mem_0_V_Addr_A_orig;
-wire   [31:0] wgt_mem_1_V_Addr_A_orig;
-wire   [31:0] inp_mem_V_Addr_A_orig;
-wire   [31:0] out_mem_V_Addr_A_orig;
+wire   [7:0]  gemm_core_output_0;
+wire   [7:0]  gemm_core_output_1;
+wire   [7:0]  gemm_core_output_2;
+wire   [7:0]  gemm_core_output_3;
+wire   [7:0]  gemm_core_output_4;
+wire   [7:0]  gemm_core_output_5;
+wire   [7:0]  gemm_core_output_6;
+wire   [7:0]  gemm_core_output_7;
+wire   [7:0]  gemm_core_output_8;
+wire   [7:0]  gemm_core_output_9;
+wire   [7:0]  gemm_core_output_10;
+wire   [7:0]  gemm_core_output_11;
+wire   [7:0]  gemm_core_output_12;
+wire   [7:0]  gemm_core_output_13;
+wire   [7:0]  gemm_core_output_14;
+wire   [7:0]  gemm_core_output_15;
+reg    [11:0] dst_offset_in_V_reg_720;
+reg    [11:0] src_offset_in_V_reg_732;
+reg    [10:0] wgt_offset_in_V_reg_744;
+reg    [11:0] dst_offset_in_0_reg_767;
+reg    [11:0] src_offset_in_0_reg_778;
+reg    [10:0] wgt_offset_in_0_reg_789;
+reg    [13:0] iter_in_reg;
+reg    [13:0] iter_out_reg;
+reg    signed [31:0] uop_current_index_reg;
+wire   [31:0] wgt_mem_addr_wire32;
+wire   [31:0] input_mem_addr_wire32;
+wire   [31:0] output_mem_addr_wire32;
+
+wire          inst_reset;
 wire   [12:0] inst_uop_begin;
 wire   [13:0] inst_uop_end;
+wire   [13:0] inst_iter_in_word;
+wire   [13:0] inst_iter_out_word;
 wire   [10:0] inst_dst_factor_out;
 wire   [10:0] inst_src_factor_out;
-wire   [9:0] inst_wgt_factor_out;
-wire   [10:0] uop_dst_addr;
-wire   [11:0] zext_ln209_fu_1260_p1;
-wire   [10:0] uop_inp_addr;
-wire   [11:0] zext_ln209_1_fu_1280_p1;
-wire   [9:0] uop_wgt_addr;
-wire   [10:0] zext_ln209_2_fu_1300_p1;
-wire   [10:0] wgt_idx_V_fu_1304_p2;
-wire   [11:0] src_idx_V_fu_1284_p2;
-wire   [11:0] dst_idx_V_fu_1264_p2;
+wire   [9:0]  inst_wgt_factor_out;
 wire   [10:0] inst_dst_factor_in;
 wire   [10:0] inst_src_factor_in;
-wire   [9:0] inst_wgt_factor_in;
+wire   [9:0]  inst_wgt_factor_in;
+
+reg    [13:0] inst_iter_in_reg;
+reg    [13:0] inst_iter_out_reg;
+
+wire   [10:0] uop_dst_addr;
+wire   [10:0] uop_inp_addr;
+wire   [9:0] uop_wgt_addr;
+
+wire   [10:0] wight_index_wire;
+wire   [11:0] src_index_wire;
+wire   [11:0] dst_index_wire;
+
 reg   [9:0] ap_NS_fsm;
 reg    ap_idle_pp0;
 wire   ap_enable_pp0;
@@ -919,7 +936,7 @@ always @ (posedge ap_clk) begin
     if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_uop_index_reg == 1'd1))) begin
         uop_iter_index_reg <= uop_next_index_reg;
     end else if (((icmp_iter_in == 1'd0) & (1'b1 == ap_CS_fsm_state3))) begin
-        uop_iter_index_reg <= uop_begin_wire0;
+        uop_iter_index_reg <= inst_uop_begin;
     end
 end
 
@@ -941,15 +958,15 @@ end
 
 always @ (posedge ap_clk) begin
     if (((1'b1 == ap_CS_fsm_pp0_stage1) & (icmp_uop_index_reg == 1'd1))) begin
-        acc_mem_V_1_addr_reg_4834 <= zext_ln544_2_fu_1321_p1;
-        zext_ln544_2_reg_4829[11 : 0] <= zext_ln544_2_fu_1321_p1[11 : 0];
+        acc_mem_V_1_addr_reg_4834 <= dst_index_wire;
+        zext_ln544_2_reg_4829[11 : 0] <= dst_index_wire;
     end
 end
 
 always @ (posedge ap_clk) begin
     if (((1'b1 == ap_CS_fsm_state1) & (ap_start == 1'b1))) begin
-        gemm_reset_reg_4748 <= insn_raw_V[32'd7];
-        inst_iter_out_reg   <= {{insn_raw_V[48:35]}};
+        gemm_reset_reg      <= inst_reset;
+        inst_iter_out_reg   <= inst_iter_out_word;
     end
 end
 
@@ -973,7 +990,7 @@ end
 
 always @ (posedge ap_clk) begin
     if (((icmp_iter_out == 1'd0) & (1'b1 == ap_CS_fsm_state2))) begin
-        inst_iter_in_reg <= {{insn_raw_V[62:49]}};
+        inst_iter_in_reg <= inst_iter_in_word;
     end
 end
 
@@ -985,7 +1002,7 @@ end
 
 always @ (posedge ap_clk) begin
     if (((icmp_iter_in == 1'd0) & (1'b1 == ap_CS_fsm_state3))) begin
-        uop_end_reg0[13 : 0] <= uop_end_wire0[13 : 0];
+        uop_end_reg0[13 : 0] <= inst_uop_end;
     end
 end
 
@@ -993,7 +1010,7 @@ always @ (*) begin
     if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0))) begin
         acc_mem_V_2_address0 = acc_mem_V_1_addr_reg_4834;
     end else if (((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage1))) begin
-        acc_mem_V_2_address0 = zext_ln544_2_fu_1321_p1;
+        acc_mem_V_2_address0 = dst_index_wire;
     end else begin
         acc_mem_V_2_address0 = 'bx;
     end
@@ -1172,8 +1189,6 @@ always @ (*) begin
     endcase
 end
 
-assign acc_mem_V_2_d0 = {{{{{{{{{{{{{{{{gemm_core_acc_out_15}, {gemm_core_acc_out_14}}, {gemm_core_acc_out_13}}, {gemm_core_acc_out_12}}, {gemm_core_acc_out_11}}, {gemm_core_acc_out_10}}, {gemm_core_acc_out_9}}, {gemm_core_acc_out_8}}, {gemm_core_acc_out_7}}, {gemm_core_acc_out_6}}, {gemm_core_acc_out_5}}, {gemm_core_acc_out_4}}, {gemm_core_acc_out_3}}, {gemm_core_acc_out_2}}, {gemm_core_acc_out_1}}, {gemm_core_acc_out_0}};
-
 // State flags
 assign ap_CS_fsm_state1     = ap_CS_fsm[32'd0];
 assign ap_CS_fsm_state2     = ap_CS_fsm[32'd1];
@@ -1184,13 +1199,24 @@ assign ap_CS_fsm_pp0_stage2 = ap_CS_fsm[32'd5];
 assign ap_CS_fsm_pp0_stage5 = ap_CS_fsm[32'd8];
 assign ap_CS_fsm_state11    = ap_CS_fsm[32'd9];
 
-assign ap_enable_pp0 = (ap_idle_pp0 ^ 1'b1);
+// Instruction Decode
+assign inst_reset          =   insn_raw_V[32'd7];
+assign inst_uop_begin      = {{insn_raw_V[20:8]}};
+assign inst_uop_end        = {{insn_raw_V[34:21]}};
+assign inst_iter_out_word  = {{insn_raw_V[48:35]}};
+assign inst_iter_in_word   = {{insn_raw_V[62:49]}};
 
-assign dst_idx_V_fu_1264_p2 = (zext_ln209_fu_1260_p1 + dst_offset_in_0_reg_767);
+assign inst_dst_factor_out = {{insn_raw_V[74:64]}};
+assign inst_dst_factor_in  = {{insn_raw_V[85:75]}};
+assign inst_src_factor_out = {{insn_raw_V[96:86]}};
+assign inst_src_factor_in  = {{insn_raw_V[107:97]}};
+assign inst_wgt_factor_out = {{insn_raw_V[117:108]}};
+assign inst_wgt_factor_in  = {{insn_raw_V[127:118]}};
 
-assign dst_offset_in_V_1_fu_4691_p2 = (inst_dst_factor_in + dst_offset_in_0_reg_767);
-
-assign dst_offset_out_V_fu_1202_p2 = (inst_dst_factor_out + dst_offset_in_V_reg_720);
+// UOP Decode
+assign uop_dst_addr        = uop_mem_V_2_q0[10:0];
+assign uop_inp_addr        = {{uop_mem_V_2_q0[21:11]}};
+assign uop_wgt_addr        = {{uop_mem_V_2_q0[31:22]}};
 
 // Acc
 assign gemm_core_a_tensor_0_0 = acc_mem_V_2_q0[31:0];
@@ -1211,7 +1237,7 @@ assign gemm_core_a_tensor_0_14 = {{acc_mem_V_2_q0[479:448]}};
 assign gemm_core_a_tensor_0_15 = {{acc_mem_V_2_q0[511:480]}};
 
 // Reset
-assign gemm_core_gemm_reset = gemm_reset_reg_4748;
+assign gemm_core_gemm_reset = gemm_reset_reg;
 
 // Input
 assign gemm_core_i_tensor_0_0 = inp_mem_V_Dout_A[7:0];
@@ -1504,96 +1530,58 @@ assign gemm_core_w_tensor_15_13 = {{wgt_mem_1_V_Dout_A[1007:1000]}};
 assign gemm_core_w_tensor_15_14 = {{wgt_mem_1_V_Dout_A[1015:1008]}};
 assign gemm_core_w_tensor_15_15 = {{wgt_mem_1_V_Dout_A[1023:1016]}};
 
+assign ap_enable_pp0 = (ap_idle_pp0 ^ 1'b1);
+
+assign dst_index_wire = (uop_dst_addr + dst_offset_in_0_reg_767);
+
+assign dst_offset_in_V_1_fu_4691_p2 = (inst_dst_factor_in + dst_offset_in_0_reg_767);
+
+assign dst_offset_out_V_fu_1202_p2 = (inst_dst_factor_out + dst_offset_in_V_reg_720);
+
 assign icmp_iter_out = ((iter_out_reg == inst_iter_out_reg) ? 1'b1 : 1'b0);  //
 
 assign icmp_iter_in = ((iter_in_reg == inst_iter_in_reg) ? 1'b1 : 1'b0);
 
 assign icmp_uop_index_wire = ((uop_current_index_reg < uop_end_reg0) ? 1'b1 : 1'b0); // 1 for not end
 
-assign inp_mem_V_Addr_A = inp_mem_V_Addr_A_orig << 32'd4;
-
-assign inp_mem_V_Addr_A_orig = zext_ln544_1_fu_1316_p1;
-
-assign inp_mem_V_Din_A = 128'd0;
-
-assign inp_mem_V_WEN_A = 16'd0;
+assign input_mem_addr_wire32 = src_index_wire;
+assign inp_mem_V_Addr_A      = input_mem_addr_wire32 << 32'd4;
+assign inp_mem_V_Din_A       = 128'd0;
+assign inp_mem_V_WEN_A       = 16'd0;
 
 assign it_in_fu_1157_p2 = (iter_in_reg + 14'd1);
 
 assign it_out_fu_1137_p2 = (iter_out_reg + 14'd1);
 
-assign out_mem_V_Addr_A = out_mem_V_Addr_A_orig << 32'd4;
-
-assign out_mem_V_Addr_A_orig = zext_ln544_2_reg_4829;
-
+assign output_mem_addr_wire32 = zext_ln544_2_reg_4829;
+assign out_mem_V_Addr_A       = output_mem_addr_wire32 << 32'd4;
 assign out_mem_V_Din_A = {{{{{{{{{{{{{{{{gemm_core_output_15}, {gemm_core_output_14}}, {gemm_core_output_13}}, {gemm_core_output_12}}, {gemm_core_output_11}}, {gemm_core_output_10}}, {gemm_core_output_9}}, {gemm_core_output_8}}, {gemm_core_output_7}}, {gemm_core_output_6}}, {gemm_core_output_5}}, {gemm_core_output_4}}, {gemm_core_output_3}}, {gemm_core_output_2}}, {gemm_core_output_1}}, {gemm_core_output_0}};
 
+assign acc_mem_V_2_d0 = {{{{{{{{{{{{{{{{gemm_core_acc_out_15}, {gemm_core_acc_out_14}}, {gemm_core_acc_out_13}}, {gemm_core_acc_out_12}}, {gemm_core_acc_out_11}}, {gemm_core_acc_out_10}}, {gemm_core_acc_out_9}}, {gemm_core_acc_out_8}}, {gemm_core_acc_out_7}}, {gemm_core_acc_out_6}}, {gemm_core_acc_out_5}}, {gemm_core_acc_out_4}}, {gemm_core_acc_out_3}}, {gemm_core_acc_out_2}}, {gemm_core_acc_out_1}}, {gemm_core_acc_out_0}};
 
-// Instruction Decode
-assign inst_uop_begin      = {{insn_raw_V[20:8]}};
-assign inst_uop_end        = {{insn_raw_V[34:21]}};
-
-assign inst_dst_factor_out = {{insn_raw_V[74:64]}};
-assign inst_dst_factor_in  = {{insn_raw_V[85:75]}};
-assign inst_src_factor_out = {{insn_raw_V[96:86]}};
-assign inst_src_factor_in  = {{insn_raw_V[107:97]}};
-assign inst_wgt_factor_out = {{insn_raw_V[117:108]}};
-assign inst_wgt_factor_in  = {{insn_raw_V[127:118]}};
-
-// UOP Decode
-assign uop_dst_addr        = uop_mem_V_2_q0[10:0];
-assign uop_inp_addr        = {{uop_mem_V_2_q0[21:11]}};
-assign uop_wgt_addr        = {{uop_mem_V_2_q0[31:22]}};
-
-assign sext_ln35_fu_1251_p1 = uop_current_index_reg;
-
-assign src_idx_V_fu_1284_p2 = (zext_ln209_1_fu_1280_p1 + src_offset_in_0_reg_778);
+assign src_index_wire = (uop_inp_addr + src_offset_in_0_reg_778);
 
 assign src_offset_in_V_1_fu_4710_p2 = (inst_src_factor_in + src_offset_in_0_reg_778);
 
 assign src_offset_out_V_fu_1221_p2 = (inst_src_factor_out + src_offset_in_V_reg_732);
 
-assign uop_mem_V_2_address0 = sext_ln35_fu_1251_p1;
+assign uop_mem_V_2_address0 = uop_current_index_reg;
 
 assign uop_next_index_wire = ($signed(32'd1) + $signed(uop_iter_index_reg));  // next uop index
 
-assign uop_begin_wire0 = inst_uop_begin;
+assign wight_index_wire = (uop_wgt_addr + wgt_offset_in_0_reg_789);
+assign wgt_mem_addr_wire32 = wight_index_wire;
 
-assign wgt_idx_V_fu_1304_p2 = (zext_ln209_2_fu_1300_p1 + wgt_offset_in_0_reg_789);
-
-assign wgt_mem_0_V_Addr_A = wgt_mem_0_V_Addr_A_orig << 32'd7;
-
-assign wgt_mem_0_V_Addr_A_orig = zext_ln544_fu_1310_p1;
-
+assign wgt_mem_0_V_Addr_A = wgt_mem_addr_wire32 << 32'd7;
 assign wgt_mem_0_V_Din_A = 1024'd0;
-
 assign wgt_mem_0_V_WEN_A = 128'd0;
 
-assign wgt_mem_1_V_Addr_A = wgt_mem_1_V_Addr_A_orig << 32'd7;
-
-assign wgt_mem_1_V_Addr_A_orig = zext_ln544_fu_1310_p1;
-
+assign wgt_mem_1_V_Addr_A = wgt_mem_addr_wire32 << 32'd7;
 assign wgt_mem_1_V_Din_A = 1024'd0;
-
 assign wgt_mem_1_V_WEN_A = 128'd0;
 
 assign wgt_offset_in_V_1_fu_4729_p2 = (inst_wgt_factor_in + wgt_offset_in_0_reg_789);
-
-assign wgt_offset_out_V_fu_1240_p2 = (inst_wgt_factor_out + wgt_offset_in_V_reg_744);
-
-assign zext_ln209_1_fu_1280_p1 = uop_inp_addr;
-
-assign zext_ln209_2_fu_1300_p1 = uop_wgt_addr;
-
-assign zext_ln209_fu_1260_p1 = uop_dst_addr;
-
-assign uop_end_wire0 = inst_uop_end;
-
-assign zext_ln544_1_fu_1316_p1 = src_idx_V_fu_1284_p2;
-
-assign zext_ln544_2_fu_1321_p1 = dst_idx_V_fu_1264_p2;
-
-assign zext_ln544_fu_1310_p1 = wgt_idx_V_fu_1304_p2;
+assign wgt_offset_out_V_fu_1240_p2  = (inst_wgt_factor_out + wgt_offset_in_V_reg_744);
 
 always @ (posedge ap_clk) begin
     uop_end_reg0[31:14]          <= 18'b000000000000000000;
