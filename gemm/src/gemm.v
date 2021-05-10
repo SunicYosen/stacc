@@ -511,7 +511,7 @@ wire   [10:0] uop_dst_addr;
 wire   [10:0] uop_inp_addr;
 wire   [9:0] uop_wgt_addr;
 
-wire   [10:0] wight_index_wire;
+wire   [10:0] weight_index_wire;
 wire   [11:0] src_index_wire;
 wire   [11:0] dst_index_wire;
 
@@ -1089,22 +1089,6 @@ always @ (*) begin
 end
 
 always @ (*) begin
-    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) )) begin
-        out_mem_V_EN_A = 1'b1;
-    end else begin
-        out_mem_V_EN_A = 1'b0;
-    end
-end
-
-always @ (*) begin
-    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_uop_index_reg == 1'd1))) begin
-        out_mem_V_WEN_A = 16'd65535;
-    end else begin
-        out_mem_V_WEN_A = 16'd0;
-    end
-end
-
-always @ (*) begin
     if (((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0))) begin
         uop_mem_V_2_ce0 = 1'b1;
     end else begin
@@ -1128,6 +1112,23 @@ always @ (*) begin
     end
 end
 
+always @ (*) begin
+    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) )) begin
+        out_mem_V_EN_A = 1'b1;
+    end else begin
+        out_mem_V_EN_A = 1'b0;
+    end
+end
+
+always @ (*) begin
+    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_uop_index_reg == 1'd1))) begin
+        out_mem_V_WEN_A = 16'd65535;
+    end else begin
+        out_mem_V_WEN_A = 16'd0;
+    end
+end
+
+// State Machine
 always @ (*) begin
     case (ap_CS_fsm)
         ap_ST_fsm_state1 : begin
@@ -1549,9 +1550,30 @@ assign inp_mem_V_Addr_A      = input_mem_addr_wire32 << 32'd4;
 assign inp_mem_V_Din_A       = 128'd0;
 assign inp_mem_V_WEN_A       = 16'd0;
 
-assign it_in_fu_1157_p2 = (iter_in_reg + 14'd1);
-
+assign it_in_fu_1157_p2  = (iter_in_reg + 14'd1);
 assign it_out_fu_1137_p2 = (iter_out_reg + 14'd1);
+
+assign src_index_wire  = (uop_inp_addr + src_offset_in_0_reg_778);
+assign src_offset_in_V_1_fu_4710_p2 = (inst_src_factor_in + src_offset_in_0_reg_778);
+assign src_offset_out_V_fu_1221_p2 = (inst_src_factor_out + src_offset_in_V_reg_732);
+
+assign uop_mem_V_2_address0 = uop_current_index_reg;
+assign uop_next_index_wire  = ($signed(32'd1) + $signed(uop_iter_index_reg));  // next uop index
+
+assign wgt_offset_in_V_1_fu_4729_p2 = (inst_wgt_factor_in + wgt_offset_in_0_reg_789);
+assign wgt_offset_out_V_fu_1240_p2  = (inst_wgt_factor_out + wgt_offset_in_V_reg_744);
+
+assign weight_index_wire            = (uop_wgt_addr + wgt_offset_in_0_reg_789);
+assign wgt_mem_addr_wire32          = weight_index_wire;
+
+assign wgt_mem_0_V_Addr_A = wgt_mem_addr_wire32 << 32'd7;
+assign wgt_mem_0_V_Din_A  = 1024'd0;
+assign wgt_mem_0_V_WEN_A  = 128'd0;
+
+assign wgt_mem_1_V_Addr_A = wgt_mem_addr_wire32 << 32'd7;
+assign wgt_mem_1_V_Din_A  = 1024'd0;
+assign wgt_mem_1_V_WEN_A  = 128'd0;
+
 
 assign output_mem_addr_wire32 = zext_ln544_2_reg_4829;
 assign out_mem_V_Addr_A       = output_mem_addr_wire32 << 32'd4;
@@ -1559,26 +1581,6 @@ assign out_mem_V_Din_A = {{{{{{{{{{{{{{{{gemm_core_output_15}, {gemm_core_output
 
 assign acc_mem_V_2_d0 = {{{{{{{{{{{{{{{{gemm_core_acc_out_15}, {gemm_core_acc_out_14}}, {gemm_core_acc_out_13}}, {gemm_core_acc_out_12}}, {gemm_core_acc_out_11}}, {gemm_core_acc_out_10}}, {gemm_core_acc_out_9}}, {gemm_core_acc_out_8}}, {gemm_core_acc_out_7}}, {gemm_core_acc_out_6}}, {gemm_core_acc_out_5}}, {gemm_core_acc_out_4}}, {gemm_core_acc_out_3}}, {gemm_core_acc_out_2}}, {gemm_core_acc_out_1}}, {gemm_core_acc_out_0}};
 
-assign src_index_wire = (uop_inp_addr + src_offset_in_0_reg_778);
-assign src_offset_in_V_1_fu_4710_p2 = (inst_src_factor_in + src_offset_in_0_reg_778);
-assign src_offset_out_V_fu_1221_p2 = (inst_src_factor_out + src_offset_in_V_reg_732);
-
-assign uop_mem_V_2_address0 = uop_current_index_reg;
-assign uop_next_index_wire  = ($signed(32'd1) + $signed(uop_iter_index_reg));  // next uop index
-
-assign wight_index_wire = (uop_wgt_addr + wgt_offset_in_0_reg_789);
-assign wgt_mem_addr_wire32 = wight_index_wire;
-
-assign wgt_mem_0_V_Addr_A = wgt_mem_addr_wire32 << 32'd7;
-assign wgt_mem_0_V_Din_A = 1024'd0;
-assign wgt_mem_0_V_WEN_A = 128'd0;
-
-assign wgt_mem_1_V_Addr_A = wgt_mem_addr_wire32 << 32'd7;
-assign wgt_mem_1_V_Din_A = 1024'd0;
-assign wgt_mem_1_V_WEN_A = 128'd0;
-
-assign wgt_offset_in_V_1_fu_4729_p2 = (inst_wgt_factor_in + wgt_offset_in_0_reg_789);
-assign wgt_offset_out_V_fu_1240_p2  = (inst_wgt_factor_out + wgt_offset_in_V_reg_744);
 
 always @ (posedge ap_clk) begin
     uop_end_reg0[31:14]          <= 18'b000000000000000000;
