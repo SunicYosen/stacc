@@ -1560,14 +1560,11 @@ assign out_mem_V_Din_A = {{{{{{{{{{{{{{{{gemm_core_output_15}, {gemm_core_output
 assign acc_mem_V_2_d0 = {{{{{{{{{{{{{{{{gemm_core_acc_out_15}, {gemm_core_acc_out_14}}, {gemm_core_acc_out_13}}, {gemm_core_acc_out_12}}, {gemm_core_acc_out_11}}, {gemm_core_acc_out_10}}, {gemm_core_acc_out_9}}, {gemm_core_acc_out_8}}, {gemm_core_acc_out_7}}, {gemm_core_acc_out_6}}, {gemm_core_acc_out_5}}, {gemm_core_acc_out_4}}, {gemm_core_acc_out_3}}, {gemm_core_acc_out_2}}, {gemm_core_acc_out_1}}, {gemm_core_acc_out_0}};
 
 assign src_index_wire = (uop_inp_addr + src_offset_in_0_reg_778);
-
 assign src_offset_in_V_1_fu_4710_p2 = (inst_src_factor_in + src_offset_in_0_reg_778);
-
 assign src_offset_out_V_fu_1221_p2 = (inst_src_factor_out + src_offset_in_V_reg_732);
 
 assign uop_mem_V_2_address0 = uop_current_index_reg;
-
-assign uop_next_index_wire = ($signed(32'd1) + $signed(uop_iter_index_reg));  // next uop index
+assign uop_next_index_wire  = ($signed(32'd1) + $signed(uop_iter_index_reg));  // next uop index
 
 assign wight_index_wire = (uop_wgt_addr + wgt_offset_in_0_reg_789);
 assign wgt_mem_addr_wire32 = wight_index_wire;
