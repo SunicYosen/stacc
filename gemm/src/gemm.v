@@ -127,7 +127,7 @@ wire   [11:0] src_offset_out_V_fu_1221_p2;
 wire   [10:0] wgt_offset_out_V_fu_1240_p2;
 wire    ap_CS_fsm_pp0_stage0;
 wire    ap_CS_fsm_pp0_stage1;
-reg   [63:0] zext_ln544_2_reg_4829;
+reg   [31:0] output_mem_addr_reg;
 reg   [10:0] acc_mem_V_1_addr_reg_4834;
 wire    ap_CS_fsm_pp0_stage2;
 wire   [31:0] uop_next_index_wire;
@@ -490,7 +490,6 @@ reg    [13:0] iter_out_reg;
 reg    signed [31:0] uop_current_index_reg;
 wire   [31:0] wgt_mem_addr_wire32;
 wire   [31:0] input_mem_addr_wire32;
-wire   [31:0] output_mem_addr_wire32;
 
 wire          inst_reset;
 wire   [12:0] inst_uop_begin;
@@ -516,8 +515,6 @@ wire   [11:0] src_index_wire;
 wire   [11:0] dst_index_wire;
 
 reg   [9:0] ap_NS_fsm;
-reg    ap_idle_pp0;
-wire   ap_enable_pp0;
 
 // power-on initialization
 initial begin
@@ -958,8 +955,8 @@ end
 
 always @ (posedge ap_clk) begin
     if (((1'b1 == ap_CS_fsm_pp0_stage1) & (icmp_uop_index_reg == 1'd1))) begin
-        acc_mem_V_1_addr_reg_4834 <= dst_index_wire;
-        zext_ln544_2_reg_4829[11 : 0] <= dst_index_wire;
+        acc_mem_V_1_addr_reg_4834     <= dst_index_wire;
+        output_mem_addr_reg[11 : 0]   <= dst_index_wire;
     end
 end
 
@@ -1057,14 +1054,6 @@ always @ (*) begin
 end
 
 always @ (*) begin
-    if (((ap_enable_reg_pp0_iter1 == 1'b0) & (ap_enable_reg_pp0_iter0 == 1'b0))) begin
-        ap_idle_pp0 = 1'b1;
-    end else begin
-        ap_idle_pp0 = 1'b0;
-    end
-end
-
-always @ (*) begin
     if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_uop_index_reg == 1'd1))) begin
         uop_current_index_reg = uop_next_index_reg;
     end else begin
@@ -1081,18 +1070,18 @@ always @ (*) begin
 end
 
 always @ (*) begin
-    if (((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage1))) begin
-        inp_mem_V_EN_A = 1'b1;
-    end else begin
-        inp_mem_V_EN_A = 1'b0;
-    end
-end
-
-always @ (*) begin
     if (((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0))) begin
         uop_mem_V_2_ce0 = 1'b1;
     end else begin
         uop_mem_V_2_ce0 = 1'b0;
+    end
+end
+
+always @ (*) begin
+    if (((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage1))) begin
+        inp_mem_V_EN_A = 1'b1;
+    end else begin
+        inp_mem_V_EN_A = 1'b0;
     end
 end
 
@@ -1531,18 +1520,8 @@ assign gemm_core_w_tensor_15_13 = {{wgt_mem_1_V_Dout_A[1007:1000]}};
 assign gemm_core_w_tensor_15_14 = {{wgt_mem_1_V_Dout_A[1015:1008]}};
 assign gemm_core_w_tensor_15_15 = {{wgt_mem_1_V_Dout_A[1023:1016]}};
 
-assign ap_enable_pp0 = (ap_idle_pp0 ^ 1'b1);
-
-assign dst_index_wire = (uop_dst_addr + dst_offset_in_0_reg_767);
-
-assign dst_offset_in_V_1_fu_4691_p2 = (inst_dst_factor_in + dst_offset_in_0_reg_767);
-
-assign dst_offset_out_V_fu_1202_p2 = (inst_dst_factor_out + dst_offset_in_V_reg_720);
-
-assign icmp_iter_out = ((iter_out_reg == inst_iter_out_reg) ? 1'b1 : 1'b0);  //
-
-assign icmp_iter_in = ((iter_in_reg == inst_iter_in_reg) ? 1'b1 : 1'b0);
-
+assign icmp_iter_out       = ((iter_out_reg == inst_iter_out_reg) ? 1'b1 : 1'b0);  //
+assign icmp_iter_in        = ((iter_in_reg == inst_iter_in_reg) ? 1'b1 : 1'b0);
 assign icmp_uop_index_wire = ((uop_current_index_reg < uop_end_reg0) ? 1'b1 : 1'b0); // 1 for not end
 
 assign input_mem_addr_wire32 = src_index_wire;
@@ -1574,17 +1553,18 @@ assign wgt_mem_1_V_Addr_A = wgt_mem_addr_wire32 << 32'd7;
 assign wgt_mem_1_V_Din_A  = 1024'd0;
 assign wgt_mem_1_V_WEN_A  = 128'd0;
 
+assign dst_index_wire = (uop_dst_addr + dst_offset_in_0_reg_767);
+assign dst_offset_in_V_1_fu_4691_p2 = (inst_dst_factor_in + dst_offset_in_0_reg_767);
+assign dst_offset_out_V_fu_1202_p2 = (inst_dst_factor_out + dst_offset_in_V_reg_720);
 
-assign output_mem_addr_wire32 = zext_ln544_2_reg_4829;
-assign out_mem_V_Addr_A       = output_mem_addr_wire32 << 32'd4;
-assign out_mem_V_Din_A = {{{{{{{{{{{{{{{{gemm_core_output_15}, {gemm_core_output_14}}, {gemm_core_output_13}}, {gemm_core_output_12}}, {gemm_core_output_11}}, {gemm_core_output_10}}, {gemm_core_output_9}}, {gemm_core_output_8}}, {gemm_core_output_7}}, {gemm_core_output_6}}, {gemm_core_output_5}}, {gemm_core_output_4}}, {gemm_core_output_3}}, {gemm_core_output_2}}, {gemm_core_output_1}}, {gemm_core_output_0}};
-
-assign acc_mem_V_2_d0 = {{{{{{{{{{{{{{{{gemm_core_acc_out_15}, {gemm_core_acc_out_14}}, {gemm_core_acc_out_13}}, {gemm_core_acc_out_12}}, {gemm_core_acc_out_11}}, {gemm_core_acc_out_10}}, {gemm_core_acc_out_9}}, {gemm_core_acc_out_8}}, {gemm_core_acc_out_7}}, {gemm_core_acc_out_6}}, {gemm_core_acc_out_5}}, {gemm_core_acc_out_4}}, {gemm_core_acc_out_3}}, {gemm_core_acc_out_2}}, {gemm_core_acc_out_1}}, {gemm_core_acc_out_0}};
+assign out_mem_V_Addr_A = output_mem_addr_reg << 32'd4;
+assign out_mem_V_Din_A  = {{{{{{{{{{{{{{{{gemm_core_output_15}, {gemm_core_output_14}}, {gemm_core_output_13}}, {gemm_core_output_12}}, {gemm_core_output_11}}, {gemm_core_output_10}}, {gemm_core_output_9}}, {gemm_core_output_8}}, {gemm_core_output_7}}, {gemm_core_output_6}}, {gemm_core_output_5}}, {gemm_core_output_4}}, {gemm_core_output_3}}, {gemm_core_output_2}}, {gemm_core_output_1}}, {gemm_core_output_0}};
+assign acc_mem_V_2_d0   = {{{{{{{{{{{{{{{{gemm_core_acc_out_15}, {gemm_core_acc_out_14}}, {gemm_core_acc_out_13}}, {gemm_core_acc_out_12}}, {gemm_core_acc_out_11}}, {gemm_core_acc_out_10}}, {gemm_core_acc_out_9}}, {gemm_core_acc_out_8}}, {gemm_core_acc_out_7}}, {gemm_core_acc_out_6}}, {gemm_core_acc_out_5}}, {gemm_core_acc_out_4}}, {gemm_core_acc_out_3}}, {gemm_core_acc_out_2}}, {gemm_core_acc_out_1}}, {gemm_core_acc_out_0}};
 
 
 always @ (posedge ap_clk) begin
-    uop_end_reg0[31:14]          <= 18'b000000000000000000;
-    zext_ln544_2_reg_4829[63:12] <= 52'b0000000000000000000000000000000000000000000000000000;
+    uop_end_reg0[31:14]        <= 18'b000000000000000000;
+    output_mem_addr_reg[31:12] <= 20'b00000000000000000000;
 end
 
 endmodule //gemm
