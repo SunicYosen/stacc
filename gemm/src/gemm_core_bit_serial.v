@@ -84,7 +84,6 @@ module gemm_core(
 	input [7:0] w_0d,
 	input [7:0] w_0e,
 	input [7:0] w_0f,
-
 	input [7:0] w_10,
 	input [7:0] w_11,
 	input [7:0] w_12,
@@ -101,7 +100,6 @@ module gemm_core(
 	input [7:0] w_1d,
 	input [7:0] w_1e,
 	input [7:0] w_1f,
-
 	input [7:0] w_20,
 	input [7:0] w_21,
 	input [7:0] w_22,
@@ -118,7 +116,6 @@ module gemm_core(
 	input [7:0] w_2d,
 	input [7:0] w_2e,
 	input [7:0] w_2f,
-
 	input [7:0] w_30,
 	input [7:0] w_31,
 	input [7:0] w_32,
@@ -135,7 +132,6 @@ module gemm_core(
 	input [7:0] w_3d,
 	input [7:0] w_3e,
 	input [7:0] w_3f,
-
 	input [7:0] w_40,
 	input [7:0] w_41,
 	input [7:0] w_42,
@@ -152,7 +148,6 @@ module gemm_core(
 	input [7:0] w_4d,
 	input [7:0] w_4e,
 	input [7:0] w_4f,
-
 	input [7:0] w_50,
 	input [7:0] w_51,
 	input [7:0] w_52,
@@ -169,7 +164,6 @@ module gemm_core(
 	input [7:0] w_5d,
 	input [7:0] w_5e,
 	input [7:0] w_5f,
-
 	input [7:0] w_60,
 	input [7:0] w_61,
 	input [7:0] w_62,
@@ -186,7 +180,6 @@ module gemm_core(
 	input [7:0] w_6d,
 	input [7:0] w_6e,
 	input [7:0] w_6f,
-
 	input [7:0] w_70,
 	input [7:0] w_71,
 	input [7:0] w_72,
@@ -220,7 +213,6 @@ module gemm_core(
 	input [7:0] w_8d,
 	input [7:0] w_8e,
 	input [7:0] w_8f,
-
 	input [7:0] w_90,
 	input [7:0] w_91,
 	input [7:0] w_92,
@@ -237,7 +229,6 @@ module gemm_core(
 	input [7:0] w_9d,
 	input [7:0] w_9e,
 	input [7:0] w_9f,
-
 	input [7:0] w_a0,
 	input [7:0] w_a1,
 	input [7:0] w_a2,
@@ -254,7 +245,6 @@ module gemm_core(
 	input [7:0] w_ad,
 	input [7:0] w_ae,
 	input [7:0] w_af,
-
 	input [7:0] w_b0,
 	input [7:0] w_b1,
 	input [7:0] w_b2,
@@ -271,7 +261,6 @@ module gemm_core(
 	input [7:0] w_bd,
 	input [7:0] w_be,
 	input [7:0] w_bf,
-
 	input [7:0] w_c0,
 	input [7:0] w_c1,
 	input [7:0] w_c2,
@@ -288,7 +277,6 @@ module gemm_core(
 	input [7:0] w_cd,
 	input [7:0] w_ce,
 	input [7:0] w_cf,
-
 	input [7:0] w_d0,
 	input [7:0] w_d1,
 	input [7:0] w_d2,
@@ -305,7 +293,6 @@ module gemm_core(
 	input [7:0] w_dd,
 	input [7:0] w_de,
 	input [7:0] w_df,
-
 	input [7:0] w_e0,
 	input [7:0] w_e1,
 	input [7:0] w_e2,
@@ -322,7 +309,6 @@ module gemm_core(
 	input [7:0] w_ed,
 	input [7:0] w_ee,
 	input [7:0] w_ef,
-
 	input [7:0] w_f0,
 	input [7:0] w_f1,
 	input [7:0] w_f2,
@@ -356,7 +342,6 @@ module gemm_core(
 	input [31:0] a_d,
 	input [31:0] a_e,
 	input [31:0] a_f,
-
 
     // acc result
     output [31:0] a_out_0,
