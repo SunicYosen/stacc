@@ -91,7 +91,7 @@ output  [31:0] out_mem_V_Addr_A;
 output   out_mem_V_EN_A;
 output  [15:0] out_mem_V_WEN_A;
 output  [127:0] out_mem_V_Din_A;
-input  [127:0] out_mem_V_Dout_A;
+input  [127:0] out_mem_V_Dout_A;  // No use
 
 reg ap_done;
 reg ap_idle;
@@ -110,8 +110,8 @@ reg[15:0] out_mem_V_WEN_A;
 wire    ap_CS_fsm_state1;
 reg  signed [31:0] uop_iter_index_reg;
 reg   [0:0] gemm_reset_reg;
-wire   [13:0] it_out_fu_1137_p2;
-reg   [13:0] it_out_reg_4761;
+wire   [13:0] iter_out_index_next_wire;
+reg   [13:0] iter_out_index_next_reg;
 wire    ap_CS_fsm_state2;
 
 wire    icmp_iter_out;
@@ -119,26 +119,26 @@ wire    icmp_iter_in;
 wire    icmp_uop_index_wire;
 reg     icmp_uop_index_reg;
 wire    ap_CS_fsm_state3;
-wire   [13:0] it_in_fu_1157_p2;
-reg   [13:0] it_in_reg_4775;
+wire   [13:0] iter_in_index_next_wire;
+reg   [13:0] iter_in_index_next_reg;
 reg   [31:0] uop_end_reg0;
-wire   [11:0] dst_offset_out_V_fu_1202_p2;
-wire   [11:0] src_offset_out_V_fu_1221_p2;
-wire   [10:0] wgt_offset_out_V_fu_1240_p2;
+wire   [11:0] dst_offset_out_wire12;
+wire   [11:0] src_offset_out_wire12;
+wire   [10:0] wgt_offset_out_wire11;
 wire    ap_CS_fsm_pp0_stage0;
 wire    ap_CS_fsm_pp0_stage1;
 reg   [31:0] output_mem_addr_reg;
-reg   [10:0] acc_mem_V_1_addr_reg_4834;
+reg   [10:0] acc_mem_addr_reg;
 wire    ap_CS_fsm_pp0_stage2;
 wire   [31:0] uop_next_index_wire;
 reg   [31:0] uop_next_index_reg;
 wire    ap_CS_fsm_pp0_stage5;
 reg    ap_enable_reg_pp0_iter0;
-wire   [11:0] dst_offset_in_V_1_fu_4691_p2;
+wire   [11:0] dst_offset_in_wire12;
 wire    ap_CS_fsm_state11;
-wire   [11:0] src_offset_in_V_1_fu_4710_p2;
-wire   [10:0] wgt_offset_in_V_1_fu_4729_p2;
-reg    ap_condition_pp0_exit_iter0_state4;
+wire   [11:0] src_offset_in_wire12;
+wire   [10:0] wgt_offset_in_wire11;
+reg    is_uop_end;
 reg    ap_enable_reg_pp0_iter1;
 
 wire   [7:0] gemm_core_i_tensor_0_0;
@@ -446,7 +446,7 @@ wire   [31:0] gemm_core_a_tensor_0_12;
 wire   [31:0] gemm_core_a_tensor_0_13;
 wire   [31:0] gemm_core_a_tensor_0_14;
 wire   [31:0] gemm_core_a_tensor_0_15;
-wire          gemm_core_gemm_reset;
+
 wire   [31:0] gemm_core_acc_out_0;
 wire   [31:0] gemm_core_acc_out_1;
 wire   [31:0] gemm_core_acc_out_2;
@@ -463,6 +463,7 @@ wire   [31:0] gemm_core_acc_out_12;
 wire   [31:0] gemm_core_acc_out_13;
 wire   [31:0] gemm_core_acc_out_14;
 wire   [31:0] gemm_core_acc_out_15;
+
 wire   [7:0]  gemm_core_output_0;
 wire   [7:0]  gemm_core_output_1;
 wire   [7:0]  gemm_core_output_2;
@@ -479,17 +480,19 @@ wire   [7:0]  gemm_core_output_12;
 wire   [7:0]  gemm_core_output_13;
 wire   [7:0]  gemm_core_output_14;
 wire   [7:0]  gemm_core_output_15;
+
+wire          gemm_core_gemm_reset;
 wire          gemm_core_done;
 wire          gemm_core_in_valid;
 wire          gemm_core_output_valid;
 wire          gemm_core_state_done;
 
-reg    [11:0] dst_offset_in_V_reg_720;
-reg    [11:0] src_offset_in_V_reg_732;
-reg    [10:0] wgt_offset_in_V_reg_744;
-reg    [11:0] dst_offset_in_0_reg_767;
-reg    [11:0] src_offset_in_0_reg_778;
-reg    [10:0] wgt_offset_in_0_reg_789;
+reg    [11:0] dst_offset_out_reg;
+reg    [11:0] src_offset_out_reg;
+reg    [10:0] wgt_offset_out_reg;
+reg    [11:0] dst_offset_in_reg;
+reg    [11:0] src_offset_in_reg;
+reg    [10:0] wgt_offset_in_reg;
 reg    [13:0] iter_in_reg;
 reg    [13:0] iter_out_reg;
 reg    signed [31:0] uop_current_index_reg;
@@ -527,6 +530,337 @@ initial begin
 #0 ap_enable_reg_pp0_iter0 = 1'b0;
 #0 ap_enable_reg_pp0_iter1 = 1'b0;
 end
+
+// Instruction INPUT interface Decode
+assign inst_reset          =   insn_raw_V[32'd7];
+assign inst_uop_begin      = {{insn_raw_V[20:8]}};
+assign inst_uop_end        = {{insn_raw_V[34:21]}};
+assign inst_iter_out_word  = {{insn_raw_V[48:35]}};
+assign inst_iter_in_word   = {{insn_raw_V[62:49]}};
+
+assign inst_dst_factor_out = {{insn_raw_V[74:64]}};
+assign inst_dst_factor_in  = {{insn_raw_V[85:75]}};
+assign inst_src_factor_out = {{insn_raw_V[96:86]}};
+assign inst_src_factor_in  = {{insn_raw_V[107:97]}};
+assign inst_wgt_factor_out = {{insn_raw_V[117:108]}};
+assign inst_wgt_factor_in  = {{insn_raw_V[127:118]}};
+
+// UOP mem INPUT interface Decode
+assign uop_dst_addr        =   uop_mem_V_2_q0[10:0];
+assign uop_inp_addr        = {{uop_mem_V_2_q0[21:11]}};
+assign uop_wgt_addr        = {{uop_mem_V_2_q0[31:22]}};
+
+// Acc Mem INPUT interface
+assign gemm_core_a_tensor_0_0  =   acc_mem_V_2_q0[31:0];
+assign gemm_core_a_tensor_0_1  = {{acc_mem_V_2_q0[63:32]}};
+assign gemm_core_a_tensor_0_2  = {{acc_mem_V_2_q0[95:64]}};
+assign gemm_core_a_tensor_0_3  = {{acc_mem_V_2_q0[127:96]}};
+assign gemm_core_a_tensor_0_4  = {{acc_mem_V_2_q0[159:128]}};
+assign gemm_core_a_tensor_0_5  = {{acc_mem_V_2_q0[191:160]}};
+assign gemm_core_a_tensor_0_6  = {{acc_mem_V_2_q0[223:192]}};
+assign gemm_core_a_tensor_0_7  = {{acc_mem_V_2_q0[255:224]}};
+assign gemm_core_a_tensor_0_8  = {{acc_mem_V_2_q0[287:256]}};
+assign gemm_core_a_tensor_0_9  = {{acc_mem_V_2_q0[319:288]}};
+assign gemm_core_a_tensor_0_10 = {{acc_mem_V_2_q0[351:320]}};
+assign gemm_core_a_tensor_0_11 = {{acc_mem_V_2_q0[383:352]}};
+assign gemm_core_a_tensor_0_12 = {{acc_mem_V_2_q0[415:384]}};
+assign gemm_core_a_tensor_0_13 = {{acc_mem_V_2_q0[447:416]}};
+assign gemm_core_a_tensor_0_14 = {{acc_mem_V_2_q0[479:448]}};
+assign gemm_core_a_tensor_0_15 = {{acc_mem_V_2_q0[511:480]}};
+
+// Reset
+assign gemm_core_gemm_reset = gemm_reset_reg;
+
+// Input mem INPUT interface
+assign gemm_core_i_tensor_0_0  =   inp_mem_V_Dout_A[7:0];
+assign gemm_core_i_tensor_0_1  = {{inp_mem_V_Dout_A[15:8]}};
+assign gemm_core_i_tensor_0_2  = {{inp_mem_V_Dout_A[23:16]}};
+assign gemm_core_i_tensor_0_3  = {{inp_mem_V_Dout_A[31:24]}};
+assign gemm_core_i_tensor_0_4  = {{inp_mem_V_Dout_A[39:32]}};
+assign gemm_core_i_tensor_0_5  = {{inp_mem_V_Dout_A[47:40]}};
+assign gemm_core_i_tensor_0_6  = {{inp_mem_V_Dout_A[55:48]}};
+assign gemm_core_i_tensor_0_7  = {{inp_mem_V_Dout_A[63:56]}};
+assign gemm_core_i_tensor_0_8  = {{inp_mem_V_Dout_A[71:64]}};
+assign gemm_core_i_tensor_0_9  = {{inp_mem_V_Dout_A[79:72]}};
+assign gemm_core_i_tensor_0_10 = {{inp_mem_V_Dout_A[87:80]}};
+assign gemm_core_i_tensor_0_11 = {{inp_mem_V_Dout_A[95:88]}};
+assign gemm_core_i_tensor_0_12 = {{inp_mem_V_Dout_A[103:96]}};
+assign gemm_core_i_tensor_0_13 = {{inp_mem_V_Dout_A[111:104]}};
+assign gemm_core_i_tensor_0_14 = {{inp_mem_V_Dout_A[119:112]}};
+assign gemm_core_i_tensor_0_15 = {{inp_mem_V_Dout_A[127:120]}};
+
+// Weight mem INPUT interface
+assign gemm_core_w_tensor_0_0 = wgt_mem_0_V_Dout_A[7:0];
+assign gemm_core_w_tensor_0_1 = {{wgt_mem_0_V_Dout_A[15:8]}};
+assign gemm_core_w_tensor_0_2 = {{wgt_mem_0_V_Dout_A[23:16]}};
+assign gemm_core_w_tensor_0_3 = {{wgt_mem_0_V_Dout_A[31:24]}};
+assign gemm_core_w_tensor_0_4 = {{wgt_mem_0_V_Dout_A[39:32]}};
+assign gemm_core_w_tensor_0_5 = {{wgt_mem_0_V_Dout_A[47:40]}};
+assign gemm_core_w_tensor_0_6 = {{wgt_mem_0_V_Dout_A[55:48]}};
+assign gemm_core_w_tensor_0_7 = {{wgt_mem_0_V_Dout_A[63:56]}};
+assign gemm_core_w_tensor_0_8 = wgt_mem_1_V_Dout_A[7:0];
+assign gemm_core_w_tensor_0_9 = {{wgt_mem_1_V_Dout_A[15:8]}};
+assign gemm_core_w_tensor_0_10 = {{wgt_mem_1_V_Dout_A[23:16]}};
+assign gemm_core_w_tensor_0_11 = {{wgt_mem_1_V_Dout_A[31:24]}};
+assign gemm_core_w_tensor_0_12 = {{wgt_mem_1_V_Dout_A[39:32]}};
+assign gemm_core_w_tensor_0_13 = {{wgt_mem_1_V_Dout_A[47:40]}};
+assign gemm_core_w_tensor_0_14 = {{wgt_mem_1_V_Dout_A[55:48]}};
+assign gemm_core_w_tensor_0_15 = {{wgt_mem_1_V_Dout_A[63:56]}};
+
+assign gemm_core_w_tensor_1_0 = {{wgt_mem_0_V_Dout_A[71:64]}};
+assign gemm_core_w_tensor_1_1 = {{wgt_mem_0_V_Dout_A[79:72]}};
+assign gemm_core_w_tensor_1_2 = {{wgt_mem_0_V_Dout_A[87:80]}};
+assign gemm_core_w_tensor_1_3 = {{wgt_mem_0_V_Dout_A[95:88]}};
+assign gemm_core_w_tensor_1_4 = {{wgt_mem_0_V_Dout_A[103:96]}};
+assign gemm_core_w_tensor_1_5 = {{wgt_mem_0_V_Dout_A[111:104]}};
+assign gemm_core_w_tensor_1_6 = {{wgt_mem_0_V_Dout_A[119:112]}};
+assign gemm_core_w_tensor_1_7 = {{wgt_mem_0_V_Dout_A[127:120]}};
+assign gemm_core_w_tensor_1_8 = {{wgt_mem_1_V_Dout_A[71:64]}};
+assign gemm_core_w_tensor_1_9 = {{wgt_mem_1_V_Dout_A[79:72]}};
+assign gemm_core_w_tensor_1_10 = {{wgt_mem_1_V_Dout_A[87:80]}};
+assign gemm_core_w_tensor_1_11 = {{wgt_mem_1_V_Dout_A[95:88]}};
+assign gemm_core_w_tensor_1_12 = {{wgt_mem_1_V_Dout_A[103:96]}};
+assign gemm_core_w_tensor_1_13 = {{wgt_mem_1_V_Dout_A[111:104]}};
+assign gemm_core_w_tensor_1_14 = {{wgt_mem_1_V_Dout_A[119:112]}};
+assign gemm_core_w_tensor_1_15 = {{wgt_mem_1_V_Dout_A[127:120]}};
+
+assign gemm_core_w_tensor_2_0 = {{wgt_mem_0_V_Dout_A[135:128]}};
+assign gemm_core_w_tensor_2_1 = {{wgt_mem_0_V_Dout_A[143:136]}};
+assign gemm_core_w_tensor_2_2 = {{wgt_mem_0_V_Dout_A[151:144]}};
+assign gemm_core_w_tensor_2_3 = {{wgt_mem_0_V_Dout_A[159:152]}};
+assign gemm_core_w_tensor_2_4 = {{wgt_mem_0_V_Dout_A[167:160]}};
+assign gemm_core_w_tensor_2_5 = {{wgt_mem_0_V_Dout_A[175:168]}};
+assign gemm_core_w_tensor_2_6 = {{wgt_mem_0_V_Dout_A[183:176]}};
+assign gemm_core_w_tensor_2_7 = {{wgt_mem_0_V_Dout_A[191:184]}};
+assign gemm_core_w_tensor_2_8 = {{wgt_mem_1_V_Dout_A[135:128]}};
+assign gemm_core_w_tensor_2_9 = {{wgt_mem_1_V_Dout_A[143:136]}};
+assign gemm_core_w_tensor_2_10 = {{wgt_mem_1_V_Dout_A[151:144]}};
+assign gemm_core_w_tensor_2_11 = {{wgt_mem_1_V_Dout_A[159:152]}};
+assign gemm_core_w_tensor_2_12 = {{wgt_mem_1_V_Dout_A[167:160]}};
+assign gemm_core_w_tensor_2_13 = {{wgt_mem_1_V_Dout_A[175:168]}};
+assign gemm_core_w_tensor_2_14 = {{wgt_mem_1_V_Dout_A[183:176]}};
+assign gemm_core_w_tensor_2_15 = {{wgt_mem_1_V_Dout_A[191:184]}};
+
+assign gemm_core_w_tensor_3_0 = {{wgt_mem_0_V_Dout_A[199:192]}};
+assign gemm_core_w_tensor_3_1 = {{wgt_mem_0_V_Dout_A[207:200]}};
+assign gemm_core_w_tensor_3_2 = {{wgt_mem_0_V_Dout_A[215:208]}};
+assign gemm_core_w_tensor_3_3 = {{wgt_mem_0_V_Dout_A[223:216]}};
+assign gemm_core_w_tensor_3_4 = {{wgt_mem_0_V_Dout_A[231:224]}};
+assign gemm_core_w_tensor_3_5 = {{wgt_mem_0_V_Dout_A[239:232]}};
+assign gemm_core_w_tensor_3_6 = {{wgt_mem_0_V_Dout_A[247:240]}};
+assign gemm_core_w_tensor_3_7 = {{wgt_mem_0_V_Dout_A[255:248]}};
+assign gemm_core_w_tensor_3_8 = {{wgt_mem_1_V_Dout_A[199:192]}};
+assign gemm_core_w_tensor_3_9 = {{wgt_mem_1_V_Dout_A[207:200]}};
+assign gemm_core_w_tensor_3_10 = {{wgt_mem_1_V_Dout_A[215:208]}};
+assign gemm_core_w_tensor_3_11 = {{wgt_mem_1_V_Dout_A[223:216]}};
+assign gemm_core_w_tensor_3_12 = {{wgt_mem_1_V_Dout_A[231:224]}};
+assign gemm_core_w_tensor_3_13 = {{wgt_mem_1_V_Dout_A[239:232]}};
+assign gemm_core_w_tensor_3_14 = {{wgt_mem_1_V_Dout_A[247:240]}};
+assign gemm_core_w_tensor_3_15 = {{wgt_mem_1_V_Dout_A[255:248]}};
+
+assign gemm_core_w_tensor_4_0 = {{wgt_mem_0_V_Dout_A[263:256]}};
+assign gemm_core_w_tensor_4_1 = {{wgt_mem_0_V_Dout_A[271:264]}};
+assign gemm_core_w_tensor_4_2 = {{wgt_mem_0_V_Dout_A[279:272]}};
+assign gemm_core_w_tensor_4_3 = {{wgt_mem_0_V_Dout_A[287:280]}};
+assign gemm_core_w_tensor_4_4 = {{wgt_mem_0_V_Dout_A[295:288]}};
+assign gemm_core_w_tensor_4_5 = {{wgt_mem_0_V_Dout_A[303:296]}};
+assign gemm_core_w_tensor_4_6 = {{wgt_mem_0_V_Dout_A[311:304]}};
+assign gemm_core_w_tensor_4_7 = {{wgt_mem_0_V_Dout_A[319:312]}};
+assign gemm_core_w_tensor_4_8 = {{wgt_mem_1_V_Dout_A[263:256]}};
+assign gemm_core_w_tensor_4_9 = {{wgt_mem_1_V_Dout_A[271:264]}};
+assign gemm_core_w_tensor_4_10 = {{wgt_mem_1_V_Dout_A[279:272]}};
+assign gemm_core_w_tensor_4_11 = {{wgt_mem_1_V_Dout_A[287:280]}};
+assign gemm_core_w_tensor_4_12 = {{wgt_mem_1_V_Dout_A[295:288]}};
+assign gemm_core_w_tensor_4_13 = {{wgt_mem_1_V_Dout_A[303:296]}};
+assign gemm_core_w_tensor_4_14 = {{wgt_mem_1_V_Dout_A[311:304]}};
+assign gemm_core_w_tensor_4_15 = {{wgt_mem_1_V_Dout_A[319:312]}};
+
+assign gemm_core_w_tensor_5_0 = {{wgt_mem_0_V_Dout_A[327:320]}};
+assign gemm_core_w_tensor_5_1 = {{wgt_mem_0_V_Dout_A[335:328]}};
+assign gemm_core_w_tensor_5_2 = {{wgt_mem_0_V_Dout_A[343:336]}};
+assign gemm_core_w_tensor_5_3 = {{wgt_mem_0_V_Dout_A[351:344]}};
+assign gemm_core_w_tensor_5_4 = {{wgt_mem_0_V_Dout_A[359:352]}};
+assign gemm_core_w_tensor_5_5 = {{wgt_mem_0_V_Dout_A[367:360]}};
+assign gemm_core_w_tensor_5_6 = {{wgt_mem_0_V_Dout_A[375:368]}};
+assign gemm_core_w_tensor_5_7 = {{wgt_mem_0_V_Dout_A[383:376]}};
+assign gemm_core_w_tensor_5_8 = {{wgt_mem_1_V_Dout_A[327:320]}};
+assign gemm_core_w_tensor_5_9 = {{wgt_mem_1_V_Dout_A[335:328]}};
+assign gemm_core_w_tensor_5_10 = {{wgt_mem_1_V_Dout_A[343:336]}};
+assign gemm_core_w_tensor_5_11 = {{wgt_mem_1_V_Dout_A[351:344]}};
+assign gemm_core_w_tensor_5_12 = {{wgt_mem_1_V_Dout_A[359:352]}};
+assign gemm_core_w_tensor_5_13 = {{wgt_mem_1_V_Dout_A[367:360]}};
+assign gemm_core_w_tensor_5_14 = {{wgt_mem_1_V_Dout_A[375:368]}};
+assign gemm_core_w_tensor_5_15 = {{wgt_mem_1_V_Dout_A[383:376]}};
+
+assign gemm_core_w_tensor_6_0 = {{wgt_mem_0_V_Dout_A[391:384]}};
+assign gemm_core_w_tensor_6_1 = {{wgt_mem_0_V_Dout_A[399:392]}};
+assign gemm_core_w_tensor_6_2 = {{wgt_mem_0_V_Dout_A[407:400]}};
+assign gemm_core_w_tensor_6_3 = {{wgt_mem_0_V_Dout_A[415:408]}};
+assign gemm_core_w_tensor_6_4 = {{wgt_mem_0_V_Dout_A[423:416]}};
+assign gemm_core_w_tensor_6_5 = {{wgt_mem_0_V_Dout_A[431:424]}};
+assign gemm_core_w_tensor_6_6 = {{wgt_mem_0_V_Dout_A[439:432]}};
+assign gemm_core_w_tensor_6_7 = {{wgt_mem_0_V_Dout_A[447:440]}};
+assign gemm_core_w_tensor_6_8 = {{wgt_mem_1_V_Dout_A[391:384]}};
+assign gemm_core_w_tensor_6_9 = {{wgt_mem_1_V_Dout_A[399:392]}};
+assign gemm_core_w_tensor_6_10 = {{wgt_mem_1_V_Dout_A[407:400]}};
+assign gemm_core_w_tensor_6_11 = {{wgt_mem_1_V_Dout_A[415:408]}};
+assign gemm_core_w_tensor_6_12 = {{wgt_mem_1_V_Dout_A[423:416]}};
+assign gemm_core_w_tensor_6_13 = {{wgt_mem_1_V_Dout_A[431:424]}};
+assign gemm_core_w_tensor_6_14 = {{wgt_mem_1_V_Dout_A[439:432]}};
+assign gemm_core_w_tensor_6_15 = {{wgt_mem_1_V_Dout_A[447:440]}};
+
+assign gemm_core_w_tensor_7_0 = {{wgt_mem_0_V_Dout_A[455:448]}};
+assign gemm_core_w_tensor_7_1 = {{wgt_mem_0_V_Dout_A[463:456]}};
+assign gemm_core_w_tensor_7_2 = {{wgt_mem_0_V_Dout_A[471:464]}};
+assign gemm_core_w_tensor_7_3 = {{wgt_mem_0_V_Dout_A[479:472]}};
+assign gemm_core_w_tensor_7_4 = {{wgt_mem_0_V_Dout_A[487:480]}};
+assign gemm_core_w_tensor_7_5 = {{wgt_mem_0_V_Dout_A[495:488]}};
+assign gemm_core_w_tensor_7_6 = {{wgt_mem_0_V_Dout_A[503:496]}};
+assign gemm_core_w_tensor_7_7 = {{wgt_mem_0_V_Dout_A[511:504]}};
+assign gemm_core_w_tensor_7_8 = {{wgt_mem_1_V_Dout_A[455:448]}};
+assign gemm_core_w_tensor_7_9 = {{wgt_mem_1_V_Dout_A[463:456]}};
+assign gemm_core_w_tensor_7_10 = {{wgt_mem_1_V_Dout_A[471:464]}};
+assign gemm_core_w_tensor_7_11 = {{wgt_mem_1_V_Dout_A[479:472]}};
+assign gemm_core_w_tensor_7_12 = {{wgt_mem_1_V_Dout_A[487:480]}};
+assign gemm_core_w_tensor_7_13 = {{wgt_mem_1_V_Dout_A[495:488]}};
+assign gemm_core_w_tensor_7_14 = {{wgt_mem_1_V_Dout_A[503:496]}};
+assign gemm_core_w_tensor_7_15 = {{wgt_mem_1_V_Dout_A[511:504]}};
+
+assign gemm_core_w_tensor_8_0 = {{wgt_mem_0_V_Dout_A[519:512]}};
+assign gemm_core_w_tensor_8_1 = {{wgt_mem_0_V_Dout_A[527:520]}};
+assign gemm_core_w_tensor_8_2 = {{wgt_mem_0_V_Dout_A[535:528]}};
+assign gemm_core_w_tensor_8_3 = {{wgt_mem_0_V_Dout_A[543:536]}};
+assign gemm_core_w_tensor_8_4 = {{wgt_mem_0_V_Dout_A[551:544]}};
+assign gemm_core_w_tensor_8_5 = {{wgt_mem_0_V_Dout_A[559:552]}};
+assign gemm_core_w_tensor_8_6 = {{wgt_mem_0_V_Dout_A[567:560]}};
+assign gemm_core_w_tensor_8_7 = {{wgt_mem_0_V_Dout_A[575:568]}};
+assign gemm_core_w_tensor_8_8 = {{wgt_mem_1_V_Dout_A[519:512]}};
+assign gemm_core_w_tensor_8_9 = {{wgt_mem_1_V_Dout_A[527:520]}};
+assign gemm_core_w_tensor_8_10 = {{wgt_mem_1_V_Dout_A[535:528]}};
+assign gemm_core_w_tensor_8_11 = {{wgt_mem_1_V_Dout_A[543:536]}};
+assign gemm_core_w_tensor_8_12 = {{wgt_mem_1_V_Dout_A[551:544]}};
+assign gemm_core_w_tensor_8_13 = {{wgt_mem_1_V_Dout_A[559:552]}};
+assign gemm_core_w_tensor_8_14 = {{wgt_mem_1_V_Dout_A[567:560]}};
+assign gemm_core_w_tensor_8_15 = {{wgt_mem_1_V_Dout_A[575:568]}};
+
+assign gemm_core_w_tensor_9_0 = {{wgt_mem_0_V_Dout_A[583:576]}};
+assign gemm_core_w_tensor_9_1 = {{wgt_mem_0_V_Dout_A[591:584]}};
+assign gemm_core_w_tensor_9_2 = {{wgt_mem_0_V_Dout_A[599:592]}};
+assign gemm_core_w_tensor_9_3 = {{wgt_mem_0_V_Dout_A[607:600]}};
+assign gemm_core_w_tensor_9_4 = {{wgt_mem_0_V_Dout_A[615:608]}};
+assign gemm_core_w_tensor_9_5 = {{wgt_mem_0_V_Dout_A[623:616]}};
+assign gemm_core_w_tensor_9_6 = {{wgt_mem_0_V_Dout_A[631:624]}};
+assign gemm_core_w_tensor_9_7 = {{wgt_mem_0_V_Dout_A[639:632]}};
+assign gemm_core_w_tensor_9_8 = {{wgt_mem_1_V_Dout_A[583:576]}};
+assign gemm_core_w_tensor_9_9 = {{wgt_mem_1_V_Dout_A[591:584]}};
+assign gemm_core_w_tensor_9_10 = {{wgt_mem_1_V_Dout_A[599:592]}};
+assign gemm_core_w_tensor_9_11 = {{wgt_mem_1_V_Dout_A[607:600]}};
+assign gemm_core_w_tensor_9_12 = {{wgt_mem_1_V_Dout_A[615:608]}};
+assign gemm_core_w_tensor_9_13 = {{wgt_mem_1_V_Dout_A[623:616]}};
+assign gemm_core_w_tensor_9_14 = {{wgt_mem_1_V_Dout_A[631:624]}};
+assign gemm_core_w_tensor_9_15 = {{wgt_mem_1_V_Dout_A[639:632]}};
+
+assign gemm_core_w_tensor_10_0 = {{wgt_mem_0_V_Dout_A[647:640]}};
+assign gemm_core_w_tensor_10_1 = {{wgt_mem_0_V_Dout_A[655:648]}};
+assign gemm_core_w_tensor_10_2 = {{wgt_mem_0_V_Dout_A[663:656]}};
+assign gemm_core_w_tensor_10_3 = {{wgt_mem_0_V_Dout_A[671:664]}};
+assign gemm_core_w_tensor_10_4 = {{wgt_mem_0_V_Dout_A[679:672]}};
+assign gemm_core_w_tensor_10_5 = {{wgt_mem_0_V_Dout_A[687:680]}};
+assign gemm_core_w_tensor_10_6 = {{wgt_mem_0_V_Dout_A[695:688]}};
+assign gemm_core_w_tensor_10_7 = {{wgt_mem_0_V_Dout_A[703:696]}};
+assign gemm_core_w_tensor_10_8 = {{wgt_mem_1_V_Dout_A[647:640]}};
+assign gemm_core_w_tensor_10_9 = {{wgt_mem_1_V_Dout_A[655:648]}};
+assign gemm_core_w_tensor_10_10 = {{wgt_mem_1_V_Dout_A[663:656]}};
+assign gemm_core_w_tensor_10_11 = {{wgt_mem_1_V_Dout_A[671:664]}};
+assign gemm_core_w_tensor_10_12 = {{wgt_mem_1_V_Dout_A[679:672]}};
+assign gemm_core_w_tensor_10_13 = {{wgt_mem_1_V_Dout_A[687:680]}};
+assign gemm_core_w_tensor_10_14 = {{wgt_mem_1_V_Dout_A[695:688]}};
+assign gemm_core_w_tensor_10_15 = {{wgt_mem_1_V_Dout_A[703:696]}};
+
+assign gemm_core_w_tensor_11_0 = {{wgt_mem_0_V_Dout_A[711:704]}};
+assign gemm_core_w_tensor_11_1 = {{wgt_mem_0_V_Dout_A[719:712]}};
+assign gemm_core_w_tensor_11_2 = {{wgt_mem_0_V_Dout_A[727:720]}};
+assign gemm_core_w_tensor_11_3 = {{wgt_mem_0_V_Dout_A[735:728]}};
+assign gemm_core_w_tensor_11_4 = {{wgt_mem_0_V_Dout_A[743:736]}};
+assign gemm_core_w_tensor_11_5 = {{wgt_mem_0_V_Dout_A[751:744]}};
+assign gemm_core_w_tensor_11_6 = {{wgt_mem_0_V_Dout_A[759:752]}};
+assign gemm_core_w_tensor_11_7 = {{wgt_mem_0_V_Dout_A[767:760]}};
+assign gemm_core_w_tensor_11_8 = {{wgt_mem_1_V_Dout_A[711:704]}};
+assign gemm_core_w_tensor_11_9 = {{wgt_mem_1_V_Dout_A[719:712]}};
+assign gemm_core_w_tensor_11_10 = {{wgt_mem_1_V_Dout_A[727:720]}};
+assign gemm_core_w_tensor_11_11 = {{wgt_mem_1_V_Dout_A[735:728]}};
+assign gemm_core_w_tensor_11_12 = {{wgt_mem_1_V_Dout_A[743:736]}};
+assign gemm_core_w_tensor_11_13 = {{wgt_mem_1_V_Dout_A[751:744]}};
+assign gemm_core_w_tensor_11_14 = {{wgt_mem_1_V_Dout_A[759:752]}};
+assign gemm_core_w_tensor_11_15 = {{wgt_mem_1_V_Dout_A[767:760]}};
+
+assign gemm_core_w_tensor_12_0 = {{wgt_mem_0_V_Dout_A[775:768]}};
+assign gemm_core_w_tensor_12_1 = {{wgt_mem_0_V_Dout_A[783:776]}};
+assign gemm_core_w_tensor_12_2 = {{wgt_mem_0_V_Dout_A[791:784]}};
+assign gemm_core_w_tensor_12_3 = {{wgt_mem_0_V_Dout_A[799:792]}};
+assign gemm_core_w_tensor_12_4 = {{wgt_mem_0_V_Dout_A[807:800]}};
+assign gemm_core_w_tensor_12_5 = {{wgt_mem_0_V_Dout_A[815:808]}};
+assign gemm_core_w_tensor_12_6 = {{wgt_mem_0_V_Dout_A[823:816]}};
+assign gemm_core_w_tensor_12_7 = {{wgt_mem_0_V_Dout_A[831:824]}};
+assign gemm_core_w_tensor_12_8 = {{wgt_mem_1_V_Dout_A[775:768]}};
+assign gemm_core_w_tensor_12_9 = {{wgt_mem_1_V_Dout_A[783:776]}};
+assign gemm_core_w_tensor_12_10 = {{wgt_mem_1_V_Dout_A[791:784]}};
+assign gemm_core_w_tensor_12_11 = {{wgt_mem_1_V_Dout_A[799:792]}};
+assign gemm_core_w_tensor_12_12 = {{wgt_mem_1_V_Dout_A[807:800]}};
+assign gemm_core_w_tensor_12_13 = {{wgt_mem_1_V_Dout_A[815:808]}};
+assign gemm_core_w_tensor_12_14 = {{wgt_mem_1_V_Dout_A[823:816]}};
+assign gemm_core_w_tensor_12_15 = {{wgt_mem_1_V_Dout_A[831:824]}};
+
+assign gemm_core_w_tensor_13_0 = {{wgt_mem_0_V_Dout_A[839:832]}};
+assign gemm_core_w_tensor_13_1 = {{wgt_mem_0_V_Dout_A[847:840]}};
+assign gemm_core_w_tensor_13_2 = {{wgt_mem_0_V_Dout_A[855:848]}};
+assign gemm_core_w_tensor_13_3 = {{wgt_mem_0_V_Dout_A[863:856]}};
+assign gemm_core_w_tensor_13_4 = {{wgt_mem_0_V_Dout_A[871:864]}};
+assign gemm_core_w_tensor_13_5 = {{wgt_mem_0_V_Dout_A[879:872]}};
+assign gemm_core_w_tensor_13_6 = {{wgt_mem_0_V_Dout_A[887:880]}};
+assign gemm_core_w_tensor_13_7 = {{wgt_mem_0_V_Dout_A[895:888]}};
+assign gemm_core_w_tensor_13_8 = {{wgt_mem_1_V_Dout_A[839:832]}};
+assign gemm_core_w_tensor_13_9 = {{wgt_mem_1_V_Dout_A[847:840]}};
+assign gemm_core_w_tensor_13_10 = {{wgt_mem_1_V_Dout_A[855:848]}};
+assign gemm_core_w_tensor_13_11 = {{wgt_mem_1_V_Dout_A[863:856]}};
+assign gemm_core_w_tensor_13_12 = {{wgt_mem_1_V_Dout_A[871:864]}};
+assign gemm_core_w_tensor_13_13 = {{wgt_mem_1_V_Dout_A[879:872]}};
+assign gemm_core_w_tensor_13_14 = {{wgt_mem_1_V_Dout_A[887:880]}};
+assign gemm_core_w_tensor_13_15 = {{wgt_mem_1_V_Dout_A[895:888]}};
+
+assign gemm_core_w_tensor_14_0 = {{wgt_mem_0_V_Dout_A[903:896]}};
+assign gemm_core_w_tensor_14_1 = {{wgt_mem_0_V_Dout_A[911:904]}};
+assign gemm_core_w_tensor_14_2 = {{wgt_mem_0_V_Dout_A[919:912]}};
+assign gemm_core_w_tensor_14_3 = {{wgt_mem_0_V_Dout_A[927:920]}};
+assign gemm_core_w_tensor_14_4 = {{wgt_mem_0_V_Dout_A[935:928]}};
+assign gemm_core_w_tensor_14_5 = {{wgt_mem_0_V_Dout_A[943:936]}};
+assign gemm_core_w_tensor_14_6 = {{wgt_mem_0_V_Dout_A[951:944]}};
+assign gemm_core_w_tensor_14_7 = {{wgt_mem_0_V_Dout_A[959:952]}};
+assign gemm_core_w_tensor_14_8 = {{wgt_mem_1_V_Dout_A[903:896]}};
+assign gemm_core_w_tensor_14_9 = {{wgt_mem_1_V_Dout_A[911:904]}};
+assign gemm_core_w_tensor_14_10 = {{wgt_mem_1_V_Dout_A[919:912]}};
+assign gemm_core_w_tensor_14_11 = {{wgt_mem_1_V_Dout_A[927:920]}};
+assign gemm_core_w_tensor_14_12 = {{wgt_mem_1_V_Dout_A[935:928]}};
+assign gemm_core_w_tensor_14_13 = {{wgt_mem_1_V_Dout_A[943:936]}};
+assign gemm_core_w_tensor_14_14 = {{wgt_mem_1_V_Dout_A[951:944]}};
+assign gemm_core_w_tensor_14_15 = {{wgt_mem_1_V_Dout_A[959:952]}};
+
+assign gemm_core_w_tensor_15_0 = {{wgt_mem_0_V_Dout_A[967:960]}};
+assign gemm_core_w_tensor_15_1 = {{wgt_mem_0_V_Dout_A[975:968]}};
+assign gemm_core_w_tensor_15_2 = {{wgt_mem_0_V_Dout_A[983:976]}};
+assign gemm_core_w_tensor_15_3 = {{wgt_mem_0_V_Dout_A[991:984]}};
+assign gemm_core_w_tensor_15_4 = {{wgt_mem_0_V_Dout_A[999:992]}};
+assign gemm_core_w_tensor_15_5 = {{wgt_mem_0_V_Dout_A[1007:1000]}};
+assign gemm_core_w_tensor_15_6 = {{wgt_mem_0_V_Dout_A[1015:1008]}};
+assign gemm_core_w_tensor_15_7 = {{wgt_mem_0_V_Dout_A[1023:1016]}};
+assign gemm_core_w_tensor_15_8 = {{wgt_mem_1_V_Dout_A[967:960]}};
+assign gemm_core_w_tensor_15_9 = {{wgt_mem_1_V_Dout_A[975:968]}};
+assign gemm_core_w_tensor_15_10 = {{wgt_mem_1_V_Dout_A[983:976]}};
+assign gemm_core_w_tensor_15_11 = {{wgt_mem_1_V_Dout_A[991:984]}};
+assign gemm_core_w_tensor_15_12 = {{wgt_mem_1_V_Dout_A[999:992]}};
+assign gemm_core_w_tensor_15_13 = {{wgt_mem_1_V_Dout_A[1007:1000]}};
+assign gemm_core_w_tensor_15_14 = {{wgt_mem_1_V_Dout_A[1015:1008]}};
+assign gemm_core_w_tensor_15_15 = {{wgt_mem_1_V_Dout_A[1023:1016]}};
 
 gemm_core gemm_core(
     .ap_clk(ap_clk),
@@ -858,274 +1192,6 @@ gemm_core gemm_core(
     .gemm_reset(gemm_core_gemm_reset)
 );
 
-always @ (posedge ap_clk) begin           // set ap_CS_fsm
-    if (ap_rst == 1'b1) begin
-        ap_CS_fsm <= ap_ST_fsm_state1;
-    end else begin
-        ap_CS_fsm <= ap_NS_fsm;
-    end
-end
-
-always @ (posedge ap_clk) begin
-    if (ap_rst == 1'b1) begin
-        ap_enable_reg_pp0_iter0 <= 1'b0;
-    end else begin
-        if (((1'b1 == ap_condition_pp0_exit_iter0_state4) & (1'b1 == ap_CS_fsm_pp0_stage0))) begin
-            ap_enable_reg_pp0_iter0 <= 1'b0;
-        end else if (((icmp_iter_in == 1'd0) & (1'b1 == ap_CS_fsm_state3))) begin // when state3 set 1
-            ap_enable_reg_pp0_iter0 <= 1'b1;
-        end
-    end
-end
-
-always @ (posedge ap_clk) begin
-    if (ap_rst == 1'b1) begin
-        ap_enable_reg_pp0_iter1 <= 1'b0;
-    end else begin
-        if ((((1'b1 == ap_CS_fsm_pp0_stage5)) | ((1'b1 == ap_CS_fsm_pp0_stage0)))) begin
-            ap_enable_reg_pp0_iter1 <= ap_enable_reg_pp0_iter0;
-        end else if (((icmp_iter_in == 1'd0) & (1'b1 == ap_CS_fsm_state3))) begin
-            ap_enable_reg_pp0_iter1 <= 1'b0;
-        end
-    end
-end
-
-always @ (posedge ap_clk) begin
-    if ((1'b1 == ap_CS_fsm_state11)) begin
-        dst_offset_in_0_reg_767 <= dst_offset_in_V_1_fu_4691_p2;
-    end else if (((icmp_iter_out == 1'd0) & (1'b1 == ap_CS_fsm_state2))) begin
-        dst_offset_in_0_reg_767 <= dst_offset_in_V_reg_720;
-    end
-end
-
-always @ (posedge ap_clk) begin
-    if (((icmp_iter_in == 1'd1) & (1'b1 == ap_CS_fsm_state3))) begin
-        dst_offset_in_V_reg_720 <= dst_offset_out_V_fu_1202_p2;
-    end else if (((1'b1 == ap_CS_fsm_state1) & (ap_start == 1'b1))) begin
-        dst_offset_in_V_reg_720 <= 12'd0;
-    end
-end
-
-always @ (posedge ap_clk) begin
-    if ((1'b1 == ap_CS_fsm_state11)) begin
-        iter_in_reg <= it_in_reg_4775;
-    end else if (((icmp_iter_out == 1'd0) & (1'b1 == ap_CS_fsm_state2))) begin
-        iter_in_reg <= 14'd0;
-    end
-end
-
-always @ (posedge ap_clk) begin  // 
-    if (((icmp_iter_in == 1'd1) & (1'b1 == ap_CS_fsm_state3))) begin
-        iter_out_reg <= it_out_reg_4761;
-    end else if (((1'b1 == ap_CS_fsm_state1) & (ap_start == 1'b1))) begin
-        iter_out_reg <= 14'd0;
-    end
-end
-
-always @ (posedge ap_clk) begin
-    if ((1'b1 == ap_CS_fsm_state11)) begin
-        src_offset_in_0_reg_778 <= src_offset_in_V_1_fu_4710_p2;
-    end else if (((icmp_iter_out == 1'd0) & (1'b1 == ap_CS_fsm_state2))) begin
-        src_offset_in_0_reg_778 <= src_offset_in_V_reg_732;
-    end
-end
-
-always @ (posedge ap_clk) begin
-    if (((icmp_iter_in == 1'd1) & (1'b1 == ap_CS_fsm_state3))) begin
-        src_offset_in_V_reg_732 <= src_offset_out_V_fu_1221_p2;
-    end else if (((1'b1 == ap_CS_fsm_state1) & (ap_start == 1'b1))) begin
-        src_offset_in_V_reg_732 <= 12'd0;
-    end
-end
-
-always @ (posedge ap_clk) begin
-    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_uop_index_reg == 1'd1))) begin
-        uop_iter_index_reg <= uop_next_index_reg;
-    end else if (((icmp_iter_in == 1'd0) & (1'b1 == ap_CS_fsm_state3))) begin
-        uop_iter_index_reg <= inst_uop_begin;
-    end
-end
-
-always @ (posedge ap_clk) begin
-    if ((1'b1 == ap_CS_fsm_state11)) begin
-        wgt_offset_in_0_reg_789 <= wgt_offset_in_V_1_fu_4729_p2;
-    end else if (((icmp_iter_out == 1'd0) & (1'b1 == ap_CS_fsm_state2))) begin
-        wgt_offset_in_0_reg_789 <= wgt_offset_in_V_reg_744;
-    end
-end
-
-always @ (posedge ap_clk) begin
-    if (((icmp_iter_in == 1'd1) & (1'b1 == ap_CS_fsm_state3))) begin
-        wgt_offset_in_V_reg_744 <= wgt_offset_out_V_fu_1240_p2;
-    end else if (((1'b1 == ap_CS_fsm_state1) & (ap_start == 1'b1))) begin
-        wgt_offset_in_V_reg_744 <= 11'd0;
-    end
-end
-
-always @ (posedge ap_clk) begin
-    if (((1'b1 == ap_CS_fsm_pp0_stage1) & (icmp_uop_index_reg == 1'd1))) begin
-        acc_mem_V_1_addr_reg_4834     <= dst_index_wire;
-        output_mem_addr_reg[11 : 0]   <= dst_index_wire;
-    end
-end
-
-always @ (posedge ap_clk) begin
-    if (((1'b1 == ap_CS_fsm_state1) & (ap_start == 1'b1))) begin
-        gemm_reset_reg      <= inst_reset;
-        inst_iter_out_reg   <= inst_iter_out_word;
-    end
-end
-
-always @ (posedge ap_clk) begin
-    if (((1'b1 == ap_CS_fsm_pp0_stage0))) begin
-        icmp_uop_index_reg <= icmp_uop_index_wire;
-    end
-end
-
-always @ (posedge ap_clk) begin
-    if ((1'b1 == ap_CS_fsm_state3)) begin
-        it_in_reg_4775 <= it_in_fu_1157_p2;
-    end
-end
-
-always @ (posedge ap_clk) begin
-    if ((1'b1 == ap_CS_fsm_state2)) begin
-        it_out_reg_4761 <= it_out_fu_1137_p2;
-    end
-end
-
-always @ (posedge ap_clk) begin
-    if (((icmp_iter_out == 1'd0) & (1'b1 == ap_CS_fsm_state2))) begin
-        inst_iter_in_reg <= inst_iter_in_word;
-    end
-end
-
-always @ (posedge ap_clk) begin  // uop next index
-    if (((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage5) & (icmp_uop_index_reg == 1'd1))) begin
-        uop_next_index_reg <= uop_next_index_wire;
-    end
-end
-
-always @ (posedge ap_clk) begin
-    if (((icmp_iter_in == 1'd0) & (1'b1 == ap_CS_fsm_state3))) begin
-        uop_end_reg0[13 : 0] <= inst_uop_end;
-    end
-end
-
-always @ (*) begin
-    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0))) begin
-        acc_mem_V_2_address0 = acc_mem_V_1_addr_reg_4834;
-    end else if (((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage1))) begin
-        acc_mem_V_2_address0 = dst_index_wire;
-    end else begin
-        acc_mem_V_2_address0 = 'bx;
-    end
-end
-
-always @ (*) begin
-    if ((((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage1)) | ((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0)))) begin
-        acc_mem_V_2_ce0 = 1'b1;
-    end else begin
-        acc_mem_V_2_ce0 = 1'b0;
-    end
-end
-
-always @ (*) begin
-    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_uop_index_reg == 1'd1))) begin
-        acc_mem_V_2_we0 = 64'd18446744073709551615; // all 1
-    end else begin
-        acc_mem_V_2_we0 = 64'd0;
-    end
-end
-
-always @ (*) begin  // uop index get to uop end
-    if ((icmp_uop_index_wire == 1'd0)) begin
-        ap_condition_pp0_exit_iter0_state4 = 1'b1;
-    end else begin
-        ap_condition_pp0_exit_iter0_state4 = 1'b0;
-    end
-end
-
-always @ (*) begin
-    if ((((icmp_iter_out == 1'd1) & (1'b1 == ap_CS_fsm_state2)) | ((ap_start == 1'b0) & (1'b1 == ap_CS_fsm_state1)))) begin
-        ap_done = 1'b1;
-    end else begin
-        ap_done = 1'b0;
-    end
-end
-
-always @ (*) begin
-    if (((ap_start == 1'b0) & (1'b1 == ap_CS_fsm_state1))) begin
-        ap_idle = 1'b1;
-    end else begin
-        ap_idle = 1'b0;
-    end
-end
-
-always @ (*) begin
-    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_uop_index_reg == 1'd1))) begin
-        uop_current_index_reg = uop_next_index_reg;
-    end else begin
-        uop_current_index_reg = uop_iter_index_reg;
-    end
-end
-
-always @ (*) begin  // iter out done
-    if (((icmp_iter_out == 1'd1) & (1'b1 == ap_CS_fsm_state2))) begin
-        ap_ready = 1'b1;
-    end else begin
-        ap_ready = 1'b0;
-    end
-end
-
-always @ (*) begin
-    if (((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0))) begin
-        uop_mem_V_2_ce0 = 1'b1;
-    end else begin
-        uop_mem_V_2_ce0 = 1'b0;
-    end
-end
-
-always @ (*) begin
-    if (((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage1))) begin
-        inp_mem_V_EN_A = 1'b1;
-    end else begin
-        inp_mem_V_EN_A = 1'b0;
-    end
-end
-
-always @ (*) begin
-    if (((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage1))) begin
-        wgt_mem_0_V_EN_A = 1'b1;
-    end else begin
-        wgt_mem_0_V_EN_A = 1'b0;
-    end
-end
-
-always @ (*) begin
-    if (((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage1))) begin
-        wgt_mem_1_V_EN_A = 1'b1;
-    end else begin
-        wgt_mem_1_V_EN_A = 1'b0;
-    end
-end
-
-always @ (*) begin
-    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) )) begin
-        out_mem_V_EN_A = 1'b1;
-    end else begin
-        out_mem_V_EN_A = 1'b0;
-    end
-end
-
-always @ (*) begin
-    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_uop_index_reg == 1'd1))) begin
-        out_mem_V_WEN_A = 16'd65535;
-    end else begin
-        out_mem_V_WEN_A = 16'd0;
-    end
-end
-
 // State Machine
 always @ (*) begin
     case (ap_CS_fsm)
@@ -1188,6 +1254,214 @@ always @ (*) begin
     endcase
 end
 
+always @ (posedge ap_clk) begin           // set ap_CS_fsm
+    if (ap_rst == 1'b1) begin
+        ap_CS_fsm <= ap_ST_fsm_state1;
+    end else begin
+        ap_CS_fsm <= ap_NS_fsm;
+    end
+end
+
+always @ (posedge ap_clk) begin
+    if (ap_rst == 1'b1) begin
+        ap_enable_reg_pp0_iter0 <= 1'b0;
+    end else begin
+        if (((1'b1 == is_uop_end) & (1'b1 == ap_CS_fsm_pp0_stage0))) begin
+            ap_enable_reg_pp0_iter0 <= 1'b0;
+        end else if (((icmp_iter_in == 1'd0) & (1'b1 == ap_CS_fsm_state3))) begin // when state3 set 1
+            ap_enable_reg_pp0_iter0 <= 1'b1;
+        end
+    end
+end
+
+always @ (posedge ap_clk) begin
+    if (ap_rst == 1'b1) begin
+        ap_enable_reg_pp0_iter1 <= 1'b0;
+    end else begin
+        if ((((1'b1 == ap_CS_fsm_pp0_stage5)) | ((1'b1 == ap_CS_fsm_pp0_stage0)))) begin
+            ap_enable_reg_pp0_iter1 <= ap_enable_reg_pp0_iter0;
+        end else if (((icmp_iter_in == 1'd0) & (1'b1 == ap_CS_fsm_state3))) begin
+            ap_enable_reg_pp0_iter1 <= 1'b0;
+        end
+    end
+end
+
+// iter out loop
+always @ (posedge ap_clk) begin  // 
+    if (((icmp_iter_in == 1'd1) & (1'b1 == ap_CS_fsm_state3))) begin
+        iter_out_reg <= iter_out_index_next_reg;
+    end else if (((1'b1 == ap_CS_fsm_state1) & (ap_start == 1'b1))) begin
+        iter_out_reg <= 14'd0;
+    end
+end
+
+assign iter_out_index_next_wire    = (iter_out_reg + 14'd1);
+
+always @ (posedge ap_clk) begin
+    if (((1'b1 == ap_CS_fsm_state1) & (ap_start == 1'b1))) begin
+        inst_iter_out_reg   <= inst_iter_out_word;
+    end
+end
+
+assign icmp_iter_out         = ((iter_out_reg == inst_iter_out_reg) ? 1'b1 : 1'b0);  //
+
+// iter in loop
+always @ (posedge ap_clk) begin
+    if ((1'b1 == ap_CS_fsm_state11)) begin
+        iter_in_reg <= iter_in_index_next_reg;
+    end else if (((icmp_iter_out == 1'd0) & (1'b1 == ap_CS_fsm_state2))) begin
+        iter_in_reg <= 14'd0;
+    end
+end
+
+assign iter_in_index_next_wire     = (iter_in_reg  + 14'd1);
+
+always @ (posedge ap_clk) begin
+    if (((icmp_iter_out == 1'd0) & (1'b1 == ap_CS_fsm_state2))) begin
+        inst_iter_in_reg <= inst_iter_in_word;
+    end
+end
+
+assign icmp_iter_in          = ((iter_in_reg == inst_iter_in_reg)  ? 1'b1 : 1'b0);
+
+
+// uop loop
+always @ (posedge ap_clk) begin
+    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_uop_index_reg == 1'd1))) begin
+        uop_iter_index_reg <= uop_next_index_reg;
+    end else if (((icmp_iter_in == 1'd0) & (1'b1 == ap_CS_fsm_state3))) begin
+        uop_iter_index_reg <= inst_uop_begin;
+    end
+end
+
+always @ (posedge ap_clk) begin  // uop next index
+    if (((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage5) & (icmp_uop_index_reg == 1'd1))) begin
+        uop_next_index_reg <= uop_next_index_wire;
+    end
+end
+
+assign uop_next_index_wire  = ($signed(32'd1) + $signed(uop_iter_index_reg));  // next uop index
+
+// dst offset
+always @ (posedge ap_clk) begin
+    if ((1'b1 == ap_CS_fsm_state11)) begin
+        dst_offset_in_reg <= dst_offset_in_wire12;
+    end else if (((icmp_iter_out == 1'd0) & (1'b1 == ap_CS_fsm_state2))) begin
+        dst_offset_in_reg <= dst_offset_out_reg;
+    end
+end
+
+always @ (posedge ap_clk) begin
+    if (((icmp_iter_in == 1'd1) & (1'b1 == ap_CS_fsm_state3))) begin
+        dst_offset_out_reg <= dst_offset_out_wire12;
+    end else if (((1'b1 == ap_CS_fsm_state1) & (ap_start == 1'b1))) begin
+        dst_offset_out_reg <= 12'd0;
+    end
+end
+
+assign dst_index_wire                = (uop_dst_addr + dst_offset_in_reg);
+assign dst_offset_in_wire12          = (inst_dst_factor_in  + dst_offset_in_reg);
+assign dst_offset_out_wire12         = (inst_dst_factor_out + dst_offset_out_reg);
+
+// src offset
+always @ (posedge ap_clk) begin
+    if ((1'b1 == ap_CS_fsm_state11)) begin
+        src_offset_in_reg <= src_offset_in_wire12;
+    end else if (((icmp_iter_out == 1'd0) & (1'b1 == ap_CS_fsm_state2))) begin
+        src_offset_in_reg <= src_offset_out_reg;
+    end
+end
+
+always @ (posedge ap_clk) begin
+    if (((icmp_iter_in == 1'd1) & (1'b1 == ap_CS_fsm_state3))) begin
+        src_offset_out_reg <= src_offset_out_wire12;
+    end else if (((1'b1 == ap_CS_fsm_state1) & (ap_start == 1'b1))) begin
+        src_offset_out_reg <= 12'd0;
+    end
+end
+
+assign src_index_wire                = (uop_inp_addr + src_offset_in_reg);
+assign src_offset_in_wire12          = (inst_src_factor_in + src_offset_in_reg);
+assign src_offset_out_wire12         = (inst_src_factor_out + src_offset_out_reg);
+
+// wgt offset
+always @ (posedge ap_clk) begin
+    if ((1'b1 == ap_CS_fsm_state11)) begin
+        wgt_offset_in_reg <= wgt_offset_in_wire11;
+    end else if (((icmp_iter_out == 1'd0) & (1'b1 == ap_CS_fsm_state2))) begin
+        wgt_offset_in_reg <= wgt_offset_out_reg;
+    end
+end
+
+always @ (posedge ap_clk) begin
+    if (((icmp_iter_in == 1'd1) & (1'b1 == ap_CS_fsm_state3))) begin
+        wgt_offset_out_reg <= wgt_offset_out_wire11;
+    end else if (((1'b1 == ap_CS_fsm_state1) & (ap_start == 1'b1))) begin
+        wgt_offset_out_reg <= 11'd0;
+    end
+end
+
+assign weight_index_wire            = (uop_wgt_addr + wgt_offset_in_reg);
+assign wgt_offset_in_wire11         = (inst_wgt_factor_in + wgt_offset_in_reg);
+assign wgt_offset_out_wire11        = (inst_wgt_factor_out + wgt_offset_out_reg);
+
+// out addr
+always @ (posedge ap_clk) begin
+    if (((1'b1 == ap_CS_fsm_pp0_stage1) & (icmp_uop_index_reg == 1'd1))) begin
+        acc_mem_addr_reg              <= dst_index_wire;
+        output_mem_addr_reg[11 : 0]   <= dst_index_wire;
+    end
+end
+
+// gemm_reset 
+always @ (posedge ap_clk) begin
+    if (((1'b1 == ap_CS_fsm_state1) & (ap_start == 1'b1))) begin
+        gemm_reset_reg      <= inst_reset;
+    end
+end
+
+// 
+always @ (posedge ap_clk) begin
+    if (((1'b1 == ap_CS_fsm_pp0_stage0))) begin
+        icmp_uop_index_reg <= icmp_uop_index_wire;
+    end
+end
+
+always @ (posedge ap_clk) begin
+    if ((1'b1 == ap_CS_fsm_state3)) begin
+        iter_in_index_next_reg <= iter_in_index_next_wire;
+    end
+end
+
+always @ (posedge ap_clk) begin
+    if ((1'b1 == ap_CS_fsm_state2)) begin
+        iter_out_index_next_reg <= iter_out_index_next_wire;
+    end
+end
+
+// UOP END
+always @ (posedge ap_clk) begin
+    if (((icmp_iter_in == 1'd0) & (1'b1 == ap_CS_fsm_state3))) begin
+        uop_end_reg0[13 : 0] <= inst_uop_end;
+    end
+end
+
+always @ (*) begin  // uop index get to uop end
+    if ((icmp_uop_index_wire == 1'd0)) begin
+        is_uop_end = 1'b1;
+    end else begin
+        is_uop_end = 1'b0;
+    end
+end
+
+always @ (*) begin
+    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_uop_index_reg == 1'd1))) begin
+        uop_current_index_reg = uop_next_index_reg;
+    end else begin
+        uop_current_index_reg = uop_iter_index_reg;
+    end
+end
+
 // State flags
 assign ap_CS_fsm_state1     = ap_CS_fsm[32'd0];
 assign ap_CS_fsm_state2     = ap_CS_fsm[32'd1];
@@ -1198,379 +1472,137 @@ assign ap_CS_fsm_pp0_stage2 = ap_CS_fsm[32'd5];
 assign ap_CS_fsm_pp0_stage5 = ap_CS_fsm[32'd8];
 assign ap_CS_fsm_state11    = ap_CS_fsm[32'd9];
 
-// Instruction Decode
-assign inst_reset          =   insn_raw_V[32'd7];
-assign inst_uop_begin      = {{insn_raw_V[20:8]}};
-assign inst_uop_end        = {{insn_raw_V[34:21]}};
-assign inst_iter_out_word  = {{insn_raw_V[48:35]}};
-assign inst_iter_in_word   = {{insn_raw_V[62:49]}};
+assign icmp_uop_index_wire   = ((uop_current_index_reg <  uop_end_reg0) ? 1'b1 : 1'b0); // 1 for not end
 
-assign inst_dst_factor_out = {{insn_raw_V[74:64]}};
-assign inst_dst_factor_in  = {{insn_raw_V[85:75]}};
-assign inst_src_factor_out = {{insn_raw_V[96:86]}};
-assign inst_src_factor_in  = {{insn_raw_V[107:97]}};
-assign inst_wgt_factor_out = {{insn_raw_V[117:108]}};
-assign inst_wgt_factor_in  = {{insn_raw_V[127:118]}};
+// UOP mem OUTPUT interface
+assign uop_mem_V_2_address0 = uop_current_index_reg;
 
-// UOP Decode
-assign uop_dst_addr        = uop_mem_V_2_q0[10:0];
-assign uop_inp_addr        = {{uop_mem_V_2_q0[21:11]}};
-assign uop_wgt_addr        = {{uop_mem_V_2_q0[31:22]}};
+always @ (*) begin
+    if (((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0))) begin
+        uop_mem_V_2_ce0 = 1'b1;
+    end else begin
+        uop_mem_V_2_ce0 = 1'b0;
+    end
+end
 
-// Acc
-assign gemm_core_a_tensor_0_0 = acc_mem_V_2_q0[31:0];
-assign gemm_core_a_tensor_0_1 = {{acc_mem_V_2_q0[63:32]}};
-assign gemm_core_a_tensor_0_2 = {{acc_mem_V_2_q0[95:64]}};
-assign gemm_core_a_tensor_0_3 = {{acc_mem_V_2_q0[127:96]}};
-assign gemm_core_a_tensor_0_4 = {{acc_mem_V_2_q0[159:128]}};
-assign gemm_core_a_tensor_0_5 = {{acc_mem_V_2_q0[191:160]}};
-assign gemm_core_a_tensor_0_6 = {{acc_mem_V_2_q0[223:192]}};
-assign gemm_core_a_tensor_0_7 = {{acc_mem_V_2_q0[255:224]}};
-assign gemm_core_a_tensor_0_8 = {{acc_mem_V_2_q0[287:256]}};
-assign gemm_core_a_tensor_0_9 = {{acc_mem_V_2_q0[319:288]}};
-assign gemm_core_a_tensor_0_10 = {{acc_mem_V_2_q0[351:320]}};
-assign gemm_core_a_tensor_0_11 = {{acc_mem_V_2_q0[383:352]}};
-assign gemm_core_a_tensor_0_12 = {{acc_mem_V_2_q0[415:384]}};
-assign gemm_core_a_tensor_0_13 = {{acc_mem_V_2_q0[447:416]}};
-assign gemm_core_a_tensor_0_14 = {{acc_mem_V_2_q0[479:448]}};
-assign gemm_core_a_tensor_0_15 = {{acc_mem_V_2_q0[511:480]}};
+// Acc mem OUTPUT interface
+always @ (*) begin
+    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0))) begin
+        acc_mem_V_2_address0 = acc_mem_addr_reg;
+    end else if (((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage1))) begin
+        acc_mem_V_2_address0 = dst_index_wire;
+    end else begin
+        acc_mem_V_2_address0 = 'bx;
+    end
+end
 
-// Reset
-assign gemm_core_gemm_reset = gemm_reset_reg;
+always @ (*) begin
+    if ((((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage1)) | ((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0)))) begin
+        acc_mem_V_2_ce0 = 1'b1;
+    end else begin
+        acc_mem_V_2_ce0 = 1'b0;
+    end
+end
 
-// Input
-assign gemm_core_i_tensor_0_0 = inp_mem_V_Dout_A[7:0];
-assign gemm_core_i_tensor_0_1 = {{inp_mem_V_Dout_A[15:8]}};
-assign gemm_core_i_tensor_0_2 = {{inp_mem_V_Dout_A[23:16]}};
-assign gemm_core_i_tensor_0_3 = {{inp_mem_V_Dout_A[31:24]}};
-assign gemm_core_i_tensor_0_4 = {{inp_mem_V_Dout_A[39:32]}};
-assign gemm_core_i_tensor_0_5 = {{inp_mem_V_Dout_A[47:40]}};
-assign gemm_core_i_tensor_0_6 = {{inp_mem_V_Dout_A[55:48]}};
-assign gemm_core_i_tensor_0_7 = {{inp_mem_V_Dout_A[63:56]}};
-assign gemm_core_i_tensor_0_8 = {{inp_mem_V_Dout_A[71:64]}};
-assign gemm_core_i_tensor_0_9 = {{inp_mem_V_Dout_A[79:72]}};
-assign gemm_core_i_tensor_0_10 = {{inp_mem_V_Dout_A[87:80]}};
-assign gemm_core_i_tensor_0_11 = {{inp_mem_V_Dout_A[95:88]}};
-assign gemm_core_i_tensor_0_12 = {{inp_mem_V_Dout_A[103:96]}};
-assign gemm_core_i_tensor_0_13 = {{inp_mem_V_Dout_A[111:104]}};
-assign gemm_core_i_tensor_0_14 = {{inp_mem_V_Dout_A[119:112]}};
-assign gemm_core_i_tensor_0_15 = {{inp_mem_V_Dout_A[127:120]}};
+always @ (*) begin
+    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_uop_index_reg == 1'd1))) begin
+        acc_mem_V_2_we0 = 64'd18446744073709551615; // all 1
+    end else begin
+        acc_mem_V_2_we0 = 64'd0;
+    end
+end
 
-// Weight 
-assign gemm_core_w_tensor_0_0 = wgt_mem_0_V_Dout_A[7:0];
-assign gemm_core_w_tensor_0_1 = {{wgt_mem_0_V_Dout_A[15:8]}};
-assign gemm_core_w_tensor_0_2 = {{wgt_mem_0_V_Dout_A[23:16]}};
-assign gemm_core_w_tensor_0_3 = {{wgt_mem_0_V_Dout_A[31:24]}};
-assign gemm_core_w_tensor_0_4 = {{wgt_mem_0_V_Dout_A[39:32]}};
-assign gemm_core_w_tensor_0_5 = {{wgt_mem_0_V_Dout_A[47:40]}};
-assign gemm_core_w_tensor_0_6 = {{wgt_mem_0_V_Dout_A[55:48]}};
-assign gemm_core_w_tensor_0_7 = {{wgt_mem_0_V_Dout_A[63:56]}};
-assign gemm_core_w_tensor_0_8 = wgt_mem_1_V_Dout_A[7:0];
-assign gemm_core_w_tensor_0_9 = {{wgt_mem_1_V_Dout_A[15:8]}};
-assign gemm_core_w_tensor_0_10 = {{wgt_mem_1_V_Dout_A[23:16]}};
-assign gemm_core_w_tensor_0_11 = {{wgt_mem_1_V_Dout_A[31:24]}};
-assign gemm_core_w_tensor_0_12 = {{wgt_mem_1_V_Dout_A[39:32]}};
-assign gemm_core_w_tensor_0_13 = {{wgt_mem_1_V_Dout_A[47:40]}};
-assign gemm_core_w_tensor_0_14 = {{wgt_mem_1_V_Dout_A[55:48]}};
-assign gemm_core_w_tensor_0_15 = {{wgt_mem_1_V_Dout_A[63:56]}};
+assign acc_mem_V_2_d0   = {{{{{{{{{{{{{{{{gemm_core_acc_out_15}, {gemm_core_acc_out_14}}, {gemm_core_acc_out_13}}, {gemm_core_acc_out_12}}, {gemm_core_acc_out_11}}, {gemm_core_acc_out_10}}, {gemm_core_acc_out_9}}, {gemm_core_acc_out_8}}, {gemm_core_acc_out_7}}, {gemm_core_acc_out_6}}, {gemm_core_acc_out_5}}, {gemm_core_acc_out_4}}, {gemm_core_acc_out_3}}, {gemm_core_acc_out_2}}, {gemm_core_acc_out_1}}, {gemm_core_acc_out_0}};
 
-assign gemm_core_w_tensor_1_0 = {{wgt_mem_0_V_Dout_A[71:64]}};
-assign gemm_core_w_tensor_1_1 = {{wgt_mem_0_V_Dout_A[79:72]}};
-assign gemm_core_w_tensor_1_2 = {{wgt_mem_0_V_Dout_A[87:80]}};
-assign gemm_core_w_tensor_1_3 = {{wgt_mem_0_V_Dout_A[95:88]}};
-assign gemm_core_w_tensor_1_4 = {{wgt_mem_0_V_Dout_A[103:96]}};
-assign gemm_core_w_tensor_1_5 = {{wgt_mem_0_V_Dout_A[111:104]}};
-assign gemm_core_w_tensor_1_6 = {{wgt_mem_0_V_Dout_A[119:112]}};
-assign gemm_core_w_tensor_1_7 = {{wgt_mem_0_V_Dout_A[127:120]}};
-assign gemm_core_w_tensor_1_8 = {{wgt_mem_1_V_Dout_A[71:64]}};
-assign gemm_core_w_tensor_1_9 = {{wgt_mem_1_V_Dout_A[79:72]}};
-assign gemm_core_w_tensor_1_10 = {{wgt_mem_1_V_Dout_A[87:80]}};
-assign gemm_core_w_tensor_1_11 = {{wgt_mem_1_V_Dout_A[95:88]}};
-assign gemm_core_w_tensor_1_12 = {{wgt_mem_1_V_Dout_A[103:96]}};
-assign gemm_core_w_tensor_1_13 = {{wgt_mem_1_V_Dout_A[111:104]}};
-assign gemm_core_w_tensor_1_14 = {{wgt_mem_1_V_Dout_A[119:112]}};
-assign gemm_core_w_tensor_1_15 = {{wgt_mem_1_V_Dout_A[127:120]}};
-
-assign gemm_core_w_tensor_2_0 = {{wgt_mem_0_V_Dout_A[135:128]}};
-assign gemm_core_w_tensor_2_1 = {{wgt_mem_0_V_Dout_A[143:136]}};
-assign gemm_core_w_tensor_2_2 = {{wgt_mem_0_V_Dout_A[151:144]}};
-assign gemm_core_w_tensor_2_3 = {{wgt_mem_0_V_Dout_A[159:152]}};
-assign gemm_core_w_tensor_2_4 = {{wgt_mem_0_V_Dout_A[167:160]}};
-assign gemm_core_w_tensor_2_5 = {{wgt_mem_0_V_Dout_A[175:168]}};
-assign gemm_core_w_tensor_2_6 = {{wgt_mem_0_V_Dout_A[183:176]}};
-assign gemm_core_w_tensor_2_7 = {{wgt_mem_0_V_Dout_A[191:184]}};
-assign gemm_core_w_tensor_2_8 = {{wgt_mem_1_V_Dout_A[135:128]}};
-assign gemm_core_w_tensor_2_9 = {{wgt_mem_1_V_Dout_A[143:136]}};
-assign gemm_core_w_tensor_2_10 = {{wgt_mem_1_V_Dout_A[151:144]}};
-assign gemm_core_w_tensor_2_11 = {{wgt_mem_1_V_Dout_A[159:152]}};
-assign gemm_core_w_tensor_2_12 = {{wgt_mem_1_V_Dout_A[167:160]}};
-assign gemm_core_w_tensor_2_13 = {{wgt_mem_1_V_Dout_A[175:168]}};
-assign gemm_core_w_tensor_2_14 = {{wgt_mem_1_V_Dout_A[183:176]}};
-assign gemm_core_w_tensor_2_15 = {{wgt_mem_1_V_Dout_A[191:184]}};
-
-assign gemm_core_w_tensor_3_0 = {{wgt_mem_0_V_Dout_A[199:192]}};
-assign gemm_core_w_tensor_3_1 = {{wgt_mem_0_V_Dout_A[207:200]}};
-assign gemm_core_w_tensor_3_2 = {{wgt_mem_0_V_Dout_A[215:208]}};
-assign gemm_core_w_tensor_3_3 = {{wgt_mem_0_V_Dout_A[223:216]}};
-assign gemm_core_w_tensor_3_4 = {{wgt_mem_0_V_Dout_A[231:224]}};
-assign gemm_core_w_tensor_3_5 = {{wgt_mem_0_V_Dout_A[239:232]}};
-assign gemm_core_w_tensor_3_6 = {{wgt_mem_0_V_Dout_A[247:240]}};
-assign gemm_core_w_tensor_3_7 = {{wgt_mem_0_V_Dout_A[255:248]}};
-assign gemm_core_w_tensor_3_8 = {{wgt_mem_1_V_Dout_A[199:192]}};
-assign gemm_core_w_tensor_3_9 = {{wgt_mem_1_V_Dout_A[207:200]}};
-assign gemm_core_w_tensor_3_10 = {{wgt_mem_1_V_Dout_A[215:208]}};
-assign gemm_core_w_tensor_3_11 = {{wgt_mem_1_V_Dout_A[223:216]}};
-assign gemm_core_w_tensor_3_12 = {{wgt_mem_1_V_Dout_A[231:224]}};
-assign gemm_core_w_tensor_3_13 = {{wgt_mem_1_V_Dout_A[239:232]}};
-assign gemm_core_w_tensor_3_14 = {{wgt_mem_1_V_Dout_A[247:240]}};
-assign gemm_core_w_tensor_3_15 = {{wgt_mem_1_V_Dout_A[255:248]}};
-
-assign gemm_core_w_tensor_4_0 = {{wgt_mem_0_V_Dout_A[263:256]}};
-assign gemm_core_w_tensor_4_1 = {{wgt_mem_0_V_Dout_A[271:264]}};
-assign gemm_core_w_tensor_4_2 = {{wgt_mem_0_V_Dout_A[279:272]}};
-assign gemm_core_w_tensor_4_3 = {{wgt_mem_0_V_Dout_A[287:280]}};
-assign gemm_core_w_tensor_4_4 = {{wgt_mem_0_V_Dout_A[295:288]}};
-assign gemm_core_w_tensor_4_5 = {{wgt_mem_0_V_Dout_A[303:296]}};
-assign gemm_core_w_tensor_4_6 = {{wgt_mem_0_V_Dout_A[311:304]}};
-assign gemm_core_w_tensor_4_7 = {{wgt_mem_0_V_Dout_A[319:312]}};
-assign gemm_core_w_tensor_4_8 = {{wgt_mem_1_V_Dout_A[263:256]}};
-assign gemm_core_w_tensor_4_9 = {{wgt_mem_1_V_Dout_A[271:264]}};
-assign gemm_core_w_tensor_4_10 = {{wgt_mem_1_V_Dout_A[279:272]}};
-assign gemm_core_w_tensor_4_11 = {{wgt_mem_1_V_Dout_A[287:280]}};
-assign gemm_core_w_tensor_4_12 = {{wgt_mem_1_V_Dout_A[295:288]}};
-assign gemm_core_w_tensor_4_13 = {{wgt_mem_1_V_Dout_A[303:296]}};
-assign gemm_core_w_tensor_4_14 = {{wgt_mem_1_V_Dout_A[311:304]}};
-assign gemm_core_w_tensor_4_15 = {{wgt_mem_1_V_Dout_A[319:312]}};
-
-assign gemm_core_w_tensor_5_0 = {{wgt_mem_0_V_Dout_A[327:320]}};
-assign gemm_core_w_tensor_5_1 = {{wgt_mem_0_V_Dout_A[335:328]}};
-assign gemm_core_w_tensor_5_2 = {{wgt_mem_0_V_Dout_A[343:336]}};
-assign gemm_core_w_tensor_5_3 = {{wgt_mem_0_V_Dout_A[351:344]}};
-assign gemm_core_w_tensor_5_4 = {{wgt_mem_0_V_Dout_A[359:352]}};
-assign gemm_core_w_tensor_5_5 = {{wgt_mem_0_V_Dout_A[367:360]}};
-assign gemm_core_w_tensor_5_6 = {{wgt_mem_0_V_Dout_A[375:368]}};
-assign gemm_core_w_tensor_5_7 = {{wgt_mem_0_V_Dout_A[383:376]}};
-assign gemm_core_w_tensor_5_8 = {{wgt_mem_1_V_Dout_A[327:320]}};
-assign gemm_core_w_tensor_5_9 = {{wgt_mem_1_V_Dout_A[335:328]}};
-assign gemm_core_w_tensor_5_10 = {{wgt_mem_1_V_Dout_A[343:336]}};
-assign gemm_core_w_tensor_5_11 = {{wgt_mem_1_V_Dout_A[351:344]}};
-assign gemm_core_w_tensor_5_12 = {{wgt_mem_1_V_Dout_A[359:352]}};
-assign gemm_core_w_tensor_5_13 = {{wgt_mem_1_V_Dout_A[367:360]}};
-assign gemm_core_w_tensor_5_14 = {{wgt_mem_1_V_Dout_A[375:368]}};
-assign gemm_core_w_tensor_5_15 = {{wgt_mem_1_V_Dout_A[383:376]}};
-
-assign gemm_core_w_tensor_6_0 = {{wgt_mem_0_V_Dout_A[391:384]}};
-assign gemm_core_w_tensor_6_1 = {{wgt_mem_0_V_Dout_A[399:392]}};
-assign gemm_core_w_tensor_6_2 = {{wgt_mem_0_V_Dout_A[407:400]}};
-assign gemm_core_w_tensor_6_3 = {{wgt_mem_0_V_Dout_A[415:408]}};
-assign gemm_core_w_tensor_6_4 = {{wgt_mem_0_V_Dout_A[423:416]}};
-assign gemm_core_w_tensor_6_5 = {{wgt_mem_0_V_Dout_A[431:424]}};
-assign gemm_core_w_tensor_6_6 = {{wgt_mem_0_V_Dout_A[439:432]}};
-assign gemm_core_w_tensor_6_7 = {{wgt_mem_0_V_Dout_A[447:440]}};
-assign gemm_core_w_tensor_6_8 = {{wgt_mem_1_V_Dout_A[391:384]}};
-assign gemm_core_w_tensor_6_9 = {{wgt_mem_1_V_Dout_A[399:392]}};
-assign gemm_core_w_tensor_6_10 = {{wgt_mem_1_V_Dout_A[407:400]}};
-assign gemm_core_w_tensor_6_11 = {{wgt_mem_1_V_Dout_A[415:408]}};
-assign gemm_core_w_tensor_6_12 = {{wgt_mem_1_V_Dout_A[423:416]}};
-assign gemm_core_w_tensor_6_13 = {{wgt_mem_1_V_Dout_A[431:424]}};
-assign gemm_core_w_tensor_6_14 = {{wgt_mem_1_V_Dout_A[439:432]}};
-assign gemm_core_w_tensor_6_15 = {{wgt_mem_1_V_Dout_A[447:440]}};
-
-assign gemm_core_w_tensor_7_0 = {{wgt_mem_0_V_Dout_A[455:448]}};
-assign gemm_core_w_tensor_7_1 = {{wgt_mem_0_V_Dout_A[463:456]}};
-assign gemm_core_w_tensor_7_2 = {{wgt_mem_0_V_Dout_A[471:464]}};
-assign gemm_core_w_tensor_7_3 = {{wgt_mem_0_V_Dout_A[479:472]}};
-assign gemm_core_w_tensor_7_4 = {{wgt_mem_0_V_Dout_A[487:480]}};
-assign gemm_core_w_tensor_7_5 = {{wgt_mem_0_V_Dout_A[495:488]}};
-assign gemm_core_w_tensor_7_6 = {{wgt_mem_0_V_Dout_A[503:496]}};
-assign gemm_core_w_tensor_7_7 = {{wgt_mem_0_V_Dout_A[511:504]}};
-assign gemm_core_w_tensor_7_8 = {{wgt_mem_1_V_Dout_A[455:448]}};
-assign gemm_core_w_tensor_7_9 = {{wgt_mem_1_V_Dout_A[463:456]}};
-assign gemm_core_w_tensor_7_10 = {{wgt_mem_1_V_Dout_A[471:464]}};
-assign gemm_core_w_tensor_7_11 = {{wgt_mem_1_V_Dout_A[479:472]}};
-assign gemm_core_w_tensor_7_12 = {{wgt_mem_1_V_Dout_A[487:480]}};
-assign gemm_core_w_tensor_7_13 = {{wgt_mem_1_V_Dout_A[495:488]}};
-assign gemm_core_w_tensor_7_14 = {{wgt_mem_1_V_Dout_A[503:496]}};
-assign gemm_core_w_tensor_7_15 = {{wgt_mem_1_V_Dout_A[511:504]}};
-
-assign gemm_core_w_tensor_8_0 = {{wgt_mem_0_V_Dout_A[519:512]}};
-assign gemm_core_w_tensor_8_1 = {{wgt_mem_0_V_Dout_A[527:520]}};
-assign gemm_core_w_tensor_8_2 = {{wgt_mem_0_V_Dout_A[535:528]}};
-assign gemm_core_w_tensor_8_3 = {{wgt_mem_0_V_Dout_A[543:536]}};
-assign gemm_core_w_tensor_8_4 = {{wgt_mem_0_V_Dout_A[551:544]}};
-assign gemm_core_w_tensor_8_5 = {{wgt_mem_0_V_Dout_A[559:552]}};
-assign gemm_core_w_tensor_8_6 = {{wgt_mem_0_V_Dout_A[567:560]}};
-assign gemm_core_w_tensor_8_7 = {{wgt_mem_0_V_Dout_A[575:568]}};
-assign gemm_core_w_tensor_8_8 = {{wgt_mem_1_V_Dout_A[519:512]}};
-assign gemm_core_w_tensor_8_9 = {{wgt_mem_1_V_Dout_A[527:520]}};
-assign gemm_core_w_tensor_8_10 = {{wgt_mem_1_V_Dout_A[535:528]}};
-assign gemm_core_w_tensor_8_11 = {{wgt_mem_1_V_Dout_A[543:536]}};
-assign gemm_core_w_tensor_8_12 = {{wgt_mem_1_V_Dout_A[551:544]}};
-assign gemm_core_w_tensor_8_13 = {{wgt_mem_1_V_Dout_A[559:552]}};
-assign gemm_core_w_tensor_8_14 = {{wgt_mem_1_V_Dout_A[567:560]}};
-assign gemm_core_w_tensor_8_15 = {{wgt_mem_1_V_Dout_A[575:568]}};
-
-assign gemm_core_w_tensor_9_0 = {{wgt_mem_0_V_Dout_A[583:576]}};
-assign gemm_core_w_tensor_9_1 = {{wgt_mem_0_V_Dout_A[591:584]}};
-assign gemm_core_w_tensor_9_2 = {{wgt_mem_0_V_Dout_A[599:592]}};
-assign gemm_core_w_tensor_9_3 = {{wgt_mem_0_V_Dout_A[607:600]}};
-assign gemm_core_w_tensor_9_4 = {{wgt_mem_0_V_Dout_A[615:608]}};
-assign gemm_core_w_tensor_9_5 = {{wgt_mem_0_V_Dout_A[623:616]}};
-assign gemm_core_w_tensor_9_6 = {{wgt_mem_0_V_Dout_A[631:624]}};
-assign gemm_core_w_tensor_9_7 = {{wgt_mem_0_V_Dout_A[639:632]}};
-assign gemm_core_w_tensor_9_8 = {{wgt_mem_1_V_Dout_A[583:576]}};
-assign gemm_core_w_tensor_9_9 = {{wgt_mem_1_V_Dout_A[591:584]}};
-assign gemm_core_w_tensor_9_10 = {{wgt_mem_1_V_Dout_A[599:592]}};
-assign gemm_core_w_tensor_9_11 = {{wgt_mem_1_V_Dout_A[607:600]}};
-assign gemm_core_w_tensor_9_12 = {{wgt_mem_1_V_Dout_A[615:608]}};
-assign gemm_core_w_tensor_9_13 = {{wgt_mem_1_V_Dout_A[623:616]}};
-assign gemm_core_w_tensor_9_14 = {{wgt_mem_1_V_Dout_A[631:624]}};
-assign gemm_core_w_tensor_9_15 = {{wgt_mem_1_V_Dout_A[639:632]}};
-
-assign gemm_core_w_tensor_10_0 = {{wgt_mem_0_V_Dout_A[647:640]}};
-assign gemm_core_w_tensor_10_1 = {{wgt_mem_0_V_Dout_A[655:648]}};
-assign gemm_core_w_tensor_10_2 = {{wgt_mem_0_V_Dout_A[663:656]}};
-assign gemm_core_w_tensor_10_3 = {{wgt_mem_0_V_Dout_A[671:664]}};
-assign gemm_core_w_tensor_10_4 = {{wgt_mem_0_V_Dout_A[679:672]}};
-assign gemm_core_w_tensor_10_5 = {{wgt_mem_0_V_Dout_A[687:680]}};
-assign gemm_core_w_tensor_10_6 = {{wgt_mem_0_V_Dout_A[695:688]}};
-assign gemm_core_w_tensor_10_7 = {{wgt_mem_0_V_Dout_A[703:696]}};
-assign gemm_core_w_tensor_10_8 = {{wgt_mem_1_V_Dout_A[647:640]}};
-assign gemm_core_w_tensor_10_9 = {{wgt_mem_1_V_Dout_A[655:648]}};
-assign gemm_core_w_tensor_10_10 = {{wgt_mem_1_V_Dout_A[663:656]}};
-assign gemm_core_w_tensor_10_11 = {{wgt_mem_1_V_Dout_A[671:664]}};
-assign gemm_core_w_tensor_10_12 = {{wgt_mem_1_V_Dout_A[679:672]}};
-assign gemm_core_w_tensor_10_13 = {{wgt_mem_1_V_Dout_A[687:680]}};
-assign gemm_core_w_tensor_10_14 = {{wgt_mem_1_V_Dout_A[695:688]}};
-assign gemm_core_w_tensor_10_15 = {{wgt_mem_1_V_Dout_A[703:696]}};
-
-assign gemm_core_w_tensor_11_0 = {{wgt_mem_0_V_Dout_A[711:704]}};
-assign gemm_core_w_tensor_11_1 = {{wgt_mem_0_V_Dout_A[719:712]}};
-assign gemm_core_w_tensor_11_2 = {{wgt_mem_0_V_Dout_A[727:720]}};
-assign gemm_core_w_tensor_11_3 = {{wgt_mem_0_V_Dout_A[735:728]}};
-assign gemm_core_w_tensor_11_4 = {{wgt_mem_0_V_Dout_A[743:736]}};
-assign gemm_core_w_tensor_11_5 = {{wgt_mem_0_V_Dout_A[751:744]}};
-assign gemm_core_w_tensor_11_6 = {{wgt_mem_0_V_Dout_A[759:752]}};
-assign gemm_core_w_tensor_11_7 = {{wgt_mem_0_V_Dout_A[767:760]}};
-assign gemm_core_w_tensor_11_8 = {{wgt_mem_1_V_Dout_A[711:704]}};
-assign gemm_core_w_tensor_11_9 = {{wgt_mem_1_V_Dout_A[719:712]}};
-assign gemm_core_w_tensor_11_10 = {{wgt_mem_1_V_Dout_A[727:720]}};
-assign gemm_core_w_tensor_11_11 = {{wgt_mem_1_V_Dout_A[735:728]}};
-assign gemm_core_w_tensor_11_12 = {{wgt_mem_1_V_Dout_A[743:736]}};
-assign gemm_core_w_tensor_11_13 = {{wgt_mem_1_V_Dout_A[751:744]}};
-assign gemm_core_w_tensor_11_14 = {{wgt_mem_1_V_Dout_A[759:752]}};
-assign gemm_core_w_tensor_11_15 = {{wgt_mem_1_V_Dout_A[767:760]}};
-
-assign gemm_core_w_tensor_12_0 = {{wgt_mem_0_V_Dout_A[775:768]}};
-assign gemm_core_w_tensor_12_1 = {{wgt_mem_0_V_Dout_A[783:776]}};
-assign gemm_core_w_tensor_12_2 = {{wgt_mem_0_V_Dout_A[791:784]}};
-assign gemm_core_w_tensor_12_3 = {{wgt_mem_0_V_Dout_A[799:792]}};
-assign gemm_core_w_tensor_12_4 = {{wgt_mem_0_V_Dout_A[807:800]}};
-assign gemm_core_w_tensor_12_5 = {{wgt_mem_0_V_Dout_A[815:808]}};
-assign gemm_core_w_tensor_12_6 = {{wgt_mem_0_V_Dout_A[823:816]}};
-assign gemm_core_w_tensor_12_7 = {{wgt_mem_0_V_Dout_A[831:824]}};
-assign gemm_core_w_tensor_12_8 = {{wgt_mem_1_V_Dout_A[775:768]}};
-assign gemm_core_w_tensor_12_9 = {{wgt_mem_1_V_Dout_A[783:776]}};
-assign gemm_core_w_tensor_12_10 = {{wgt_mem_1_V_Dout_A[791:784]}};
-assign gemm_core_w_tensor_12_11 = {{wgt_mem_1_V_Dout_A[799:792]}};
-assign gemm_core_w_tensor_12_12 = {{wgt_mem_1_V_Dout_A[807:800]}};
-assign gemm_core_w_tensor_12_13 = {{wgt_mem_1_V_Dout_A[815:808]}};
-assign gemm_core_w_tensor_12_14 = {{wgt_mem_1_V_Dout_A[823:816]}};
-assign gemm_core_w_tensor_12_15 = {{wgt_mem_1_V_Dout_A[831:824]}};
-
-assign gemm_core_w_tensor_13_0 = {{wgt_mem_0_V_Dout_A[839:832]}};
-assign gemm_core_w_tensor_13_1 = {{wgt_mem_0_V_Dout_A[847:840]}};
-assign gemm_core_w_tensor_13_2 = {{wgt_mem_0_V_Dout_A[855:848]}};
-assign gemm_core_w_tensor_13_3 = {{wgt_mem_0_V_Dout_A[863:856]}};
-assign gemm_core_w_tensor_13_4 = {{wgt_mem_0_V_Dout_A[871:864]}};
-assign gemm_core_w_tensor_13_5 = {{wgt_mem_0_V_Dout_A[879:872]}};
-assign gemm_core_w_tensor_13_6 = {{wgt_mem_0_V_Dout_A[887:880]}};
-assign gemm_core_w_tensor_13_7 = {{wgt_mem_0_V_Dout_A[895:888]}};
-assign gemm_core_w_tensor_13_8 = {{wgt_mem_1_V_Dout_A[839:832]}};
-assign gemm_core_w_tensor_13_9 = {{wgt_mem_1_V_Dout_A[847:840]}};
-assign gemm_core_w_tensor_13_10 = {{wgt_mem_1_V_Dout_A[855:848]}};
-assign gemm_core_w_tensor_13_11 = {{wgt_mem_1_V_Dout_A[863:856]}};
-assign gemm_core_w_tensor_13_12 = {{wgt_mem_1_V_Dout_A[871:864]}};
-assign gemm_core_w_tensor_13_13 = {{wgt_mem_1_V_Dout_A[879:872]}};
-assign gemm_core_w_tensor_13_14 = {{wgt_mem_1_V_Dout_A[887:880]}};
-assign gemm_core_w_tensor_13_15 = {{wgt_mem_1_V_Dout_A[895:888]}};
-
-assign gemm_core_w_tensor_14_0 = {{wgt_mem_0_V_Dout_A[903:896]}};
-assign gemm_core_w_tensor_14_1 = {{wgt_mem_0_V_Dout_A[911:904]}};
-assign gemm_core_w_tensor_14_2 = {{wgt_mem_0_V_Dout_A[919:912]}};
-assign gemm_core_w_tensor_14_3 = {{wgt_mem_0_V_Dout_A[927:920]}};
-assign gemm_core_w_tensor_14_4 = {{wgt_mem_0_V_Dout_A[935:928]}};
-assign gemm_core_w_tensor_14_5 = {{wgt_mem_0_V_Dout_A[943:936]}};
-assign gemm_core_w_tensor_14_6 = {{wgt_mem_0_V_Dout_A[951:944]}};
-assign gemm_core_w_tensor_14_7 = {{wgt_mem_0_V_Dout_A[959:952]}};
-assign gemm_core_w_tensor_14_8 = {{wgt_mem_1_V_Dout_A[903:896]}};
-assign gemm_core_w_tensor_14_9 = {{wgt_mem_1_V_Dout_A[911:904]}};
-assign gemm_core_w_tensor_14_10 = {{wgt_mem_1_V_Dout_A[919:912]}};
-assign gemm_core_w_tensor_14_11 = {{wgt_mem_1_V_Dout_A[927:920]}};
-assign gemm_core_w_tensor_14_12 = {{wgt_mem_1_V_Dout_A[935:928]}};
-assign gemm_core_w_tensor_14_13 = {{wgt_mem_1_V_Dout_A[943:936]}};
-assign gemm_core_w_tensor_14_14 = {{wgt_mem_1_V_Dout_A[951:944]}};
-assign gemm_core_w_tensor_14_15 = {{wgt_mem_1_V_Dout_A[959:952]}};
-
-assign gemm_core_w_tensor_15_0 = {{wgt_mem_0_V_Dout_A[967:960]}};
-assign gemm_core_w_tensor_15_1 = {{wgt_mem_0_V_Dout_A[975:968]}};
-assign gemm_core_w_tensor_15_2 = {{wgt_mem_0_V_Dout_A[983:976]}};
-assign gemm_core_w_tensor_15_3 = {{wgt_mem_0_V_Dout_A[991:984]}};
-assign gemm_core_w_tensor_15_4 = {{wgt_mem_0_V_Dout_A[999:992]}};
-assign gemm_core_w_tensor_15_5 = {{wgt_mem_0_V_Dout_A[1007:1000]}};
-assign gemm_core_w_tensor_15_6 = {{wgt_mem_0_V_Dout_A[1015:1008]}};
-assign gemm_core_w_tensor_15_7 = {{wgt_mem_0_V_Dout_A[1023:1016]}};
-assign gemm_core_w_tensor_15_8 = {{wgt_mem_1_V_Dout_A[967:960]}};
-assign gemm_core_w_tensor_15_9 = {{wgt_mem_1_V_Dout_A[975:968]}};
-assign gemm_core_w_tensor_15_10 = {{wgt_mem_1_V_Dout_A[983:976]}};
-assign gemm_core_w_tensor_15_11 = {{wgt_mem_1_V_Dout_A[991:984]}};
-assign gemm_core_w_tensor_15_12 = {{wgt_mem_1_V_Dout_A[999:992]}};
-assign gemm_core_w_tensor_15_13 = {{wgt_mem_1_V_Dout_A[1007:1000]}};
-assign gemm_core_w_tensor_15_14 = {{wgt_mem_1_V_Dout_A[1015:1008]}};
-assign gemm_core_w_tensor_15_15 = {{wgt_mem_1_V_Dout_A[1023:1016]}};
-
-assign icmp_iter_out       = ((iter_out_reg == inst_iter_out_reg) ? 1'b1 : 1'b0);  //
-assign icmp_iter_in        = ((iter_in_reg == inst_iter_in_reg) ? 1'b1 : 1'b0);
-assign icmp_uop_index_wire = ((uop_current_index_reg < uop_end_reg0) ? 1'b1 : 1'b0); // 1 for not end
-
+// INP mem OUTPUT interface
 assign input_mem_addr_wire32 = src_index_wire;
+
 assign inp_mem_V_Addr_A      = input_mem_addr_wire32 << 32'd4;
 assign inp_mem_V_Din_A       = 128'd0;
 assign inp_mem_V_WEN_A       = 16'd0;
 
-assign it_in_fu_1157_p2  = (iter_in_reg + 14'd1);
-assign it_out_fu_1137_p2 = (iter_out_reg + 14'd1);
+always @ (*) begin
+    if (((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage1))) begin
+        inp_mem_V_EN_A = 1'b1;
+    end else begin
+        inp_mem_V_EN_A = 1'b0;
+    end
+end
 
-assign src_index_wire  = (uop_inp_addr + src_offset_in_0_reg_778);
-assign src_offset_in_V_1_fu_4710_p2 = (inst_src_factor_in + src_offset_in_0_reg_778);
-assign src_offset_out_V_fu_1221_p2 = (inst_src_factor_out + src_offset_in_V_reg_732);
+// WGT mem OUTPUT interface
+// wgt mem addr
+assign wgt_mem_addr_wire32  = weight_index_wire;
 
-assign uop_mem_V_2_address0 = uop_current_index_reg;
-assign uop_next_index_wire  = ($signed(32'd1) + $signed(uop_iter_index_reg));  // next uop index
+assign wgt_mem_0_V_Addr_A   = wgt_mem_addr_wire32 << 32'd7;
+assign wgt_mem_0_V_Din_A    = 1024'd0;
+assign wgt_mem_0_V_WEN_A    = 128'd0;
 
-assign wgt_offset_in_V_1_fu_4729_p2 = (inst_wgt_factor_in + wgt_offset_in_0_reg_789);
-assign wgt_offset_out_V_fu_1240_p2  = (inst_wgt_factor_out + wgt_offset_in_V_reg_744);
+always @ (*) begin
+    if (((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage1))) begin
+        wgt_mem_0_V_EN_A = 1'b1;
+    end else begin
+        wgt_mem_0_V_EN_A = 1'b0;
+    end
+end
 
-assign weight_index_wire            = (uop_wgt_addr + wgt_offset_in_0_reg_789);
-assign wgt_mem_addr_wire32          = weight_index_wire;
+assign wgt_mem_1_V_Addr_A   = wgt_mem_addr_wire32 << 32'd7;
+assign wgt_mem_1_V_Din_A    = 1024'd0;
+assign wgt_mem_1_V_WEN_A    = 128'd0;
 
-assign wgt_mem_0_V_Addr_A = wgt_mem_addr_wire32 << 32'd7;
-assign wgt_mem_0_V_Din_A  = 1024'd0;
-assign wgt_mem_0_V_WEN_A  = 128'd0;
+always @ (*) begin
+    if (((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage1))) begin
+        wgt_mem_1_V_EN_A = 1'b1;
+    end else begin
+        wgt_mem_1_V_EN_A = 1'b0;
+    end
+end
 
-assign wgt_mem_1_V_Addr_A = wgt_mem_addr_wire32 << 32'd7;
-assign wgt_mem_1_V_Din_A  = 1024'd0;
-assign wgt_mem_1_V_WEN_A  = 128'd0;
-
-assign dst_index_wire = (uop_dst_addr + dst_offset_in_0_reg_767);
-assign dst_offset_in_V_1_fu_4691_p2 = (inst_dst_factor_in + dst_offset_in_0_reg_767);
-assign dst_offset_out_V_fu_1202_p2 = (inst_dst_factor_out + dst_offset_in_V_reg_720);
-
+// out mem OUTPUT interface
 assign out_mem_V_Addr_A = output_mem_addr_reg << 32'd4;
+always @ (*) begin
+    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) )) begin
+        out_mem_V_EN_A = 1'b1;
+    end else begin
+        out_mem_V_EN_A = 1'b0;
+    end
+end
+always @ (*) begin
+    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_uop_index_reg == 1'd1))) begin
+        out_mem_V_WEN_A = 16'd65535;
+    end else begin
+        out_mem_V_WEN_A = 16'd0;
+    end
+end
 assign out_mem_V_Din_A  = {{{{{{{{{{{{{{{{gemm_core_output_15}, {gemm_core_output_14}}, {gemm_core_output_13}}, {gemm_core_output_12}}, {gemm_core_output_11}}, {gemm_core_output_10}}, {gemm_core_output_9}}, {gemm_core_output_8}}, {gemm_core_output_7}}, {gemm_core_output_6}}, {gemm_core_output_5}}, {gemm_core_output_4}}, {gemm_core_output_3}}, {gemm_core_output_2}}, {gemm_core_output_1}}, {gemm_core_output_0}};
-assign acc_mem_V_2_d0   = {{{{{{{{{{{{{{{{gemm_core_acc_out_15}, {gemm_core_acc_out_14}}, {gemm_core_acc_out_13}}, {gemm_core_acc_out_12}}, {gemm_core_acc_out_11}}, {gemm_core_acc_out_10}}, {gemm_core_acc_out_9}}, {gemm_core_acc_out_8}}, {gemm_core_acc_out_7}}, {gemm_core_acc_out_6}}, {gemm_core_acc_out_5}}, {gemm_core_acc_out_4}}, {gemm_core_acc_out_3}}, {gemm_core_acc_out_2}}, {gemm_core_acc_out_1}}, {gemm_core_acc_out_0}};
 
+// ap done OUTPUT interface
+always @ (*) begin
+    if ((((icmp_iter_out == 1'd1) & (1'b1 == ap_CS_fsm_state2)) | ((ap_start == 1'b0) & (1'b1 == ap_CS_fsm_state1)))) begin
+        ap_done = 1'b1;
+    end else begin
+        ap_done = 1'b0;
+    end
+end
 
+// ap idle OUTPUT interface
+always @ (*) begin
+    if (((ap_start == 1'b0) & (1'b1 == ap_CS_fsm_state1))) begin
+        ap_idle = 1'b1;
+    end else begin
+        ap_idle = 1'b0;
+    end
+end
+
+// ap ready OUTPUT interface
+always @ (*) begin  // iter out done
+    if (((icmp_iter_out == 1'd1) & (1'b1 == ap_CS_fsm_state2))) begin
+        ap_ready = 1'b1;
+    end else begin
+        ap_ready = 1'b0;
+    end
+end
+
+// Const
 always @ (posedge ap_clk) begin
     uop_end_reg0[31:14]        <= 18'b000000000000000000;
     output_mem_addr_reg[31:12] <= 20'b00000000000000000000;
