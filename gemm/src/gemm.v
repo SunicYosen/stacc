@@ -106,41 +106,6 @@ reg wgt_mem_1_V_EN_A;
 reg out_mem_V_EN_A;
 reg[15:0] out_mem_V_WEN_A;
 
-(* fsm_encoding = "none" *) reg   [9:0] ap_CS_fsm;
-wire    ap_CS_fsm_state1;
-reg  signed [31:0] uop_iter_index_reg;
-reg   [0:0] gemm_reset_reg;
-wire   [13:0] iter_out_index_next_wire;
-reg   [13:0] iter_out_index_next_reg;
-wire    ap_CS_fsm_state2;
-
-wire    icmp_iter_out;
-wire    icmp_iter_in;
-wire    icmp_uop_index_wire;
-reg     icmp_uop_index_reg;
-wire    ap_CS_fsm_state3;
-wire   [13:0] iter_in_index_next_wire;
-reg   [13:0] iter_in_index_next_reg;
-reg   [31:0] uop_end_reg0;
-wire   [11:0] dst_offset_out_wire12;
-wire   [11:0] src_offset_out_wire12;
-wire   [10:0] wgt_offset_out_wire11;
-wire    ap_CS_fsm_pp0_stage0;
-wire    ap_CS_fsm_pp0_stage1;
-reg   [31:0] output_mem_addr_reg;
-reg   [10:0] acc_mem_addr_reg;
-wire    ap_CS_fsm_pp0_stage2;
-wire   [31:0] uop_next_index_wire;
-reg   [31:0] uop_next_index_reg;
-wire    ap_CS_fsm_pp0_stage5;
-reg    ap_enable_reg_pp0_iter0;
-wire   [11:0] dst_offset_in_wire12;
-wire    ap_CS_fsm_state11;
-wire   [11:0] src_offset_in_wire12;
-wire   [10:0] wgt_offset_in_wire11;
-reg    is_uop_end;
-reg    ap_enable_reg_pp0_iter1;
-
 wire   [7:0] gemm_core_i_tensor_0_0;
 wire   [7:0] gemm_core_i_tensor_0_1;
 wire   [7:0] gemm_core_i_tensor_0_2;
@@ -487,6 +452,42 @@ wire          gemm_core_in_valid;
 wire          gemm_core_output_valid;
 wire          gemm_core_state_done;
 
+
+(* fsm_encoding = "none" *) reg   [9:0] ap_CS_fsm;
+wire    ap_CS_fsm_state1;
+reg  signed [31:0] uop_iter_index_reg;
+reg   [0:0] gemm_reset_reg;
+wire   [13:0] iter_out_index_next_wire;
+reg   [13:0] iter_out_index_next_reg;
+wire    ap_CS_fsm_state2;
+
+wire    icmp_eq_iter_out;
+wire    icmp_eq_iter_in;
+wire    icmp_less_uop_index_than_end_wire;
+reg     icmp_uop_index_reg;
+wire    ap_CS_fsm_state3;
+wire   [13:0] iter_in_index_next_wire;
+reg   [13:0] iter_in_index_next_reg;
+reg   [31:0] uop_end_reg0;
+wire   [11:0] dst_offset_out_wire12;
+wire   [11:0] src_offset_out_wire12;
+wire   [10:0] wgt_offset_out_wire11;
+wire    ap_CS_fsm_pp0_stage0;
+wire    ap_CS_fsm_pp0_stage1;
+reg   [31:0] output_mem_addr_reg;
+reg   [10:0] acc_mem_addr_reg;
+wire    ap_CS_fsm_pp0_stage2;
+wire   [31:0] uop_next_index_wire;
+reg   [31:0] uop_next_index_reg;
+wire    ap_CS_fsm_pp0_stage5;
+reg    ap_enable_reg_pp0_iter0;
+wire   [11:0] dst_offset_in_wire12;
+wire    ap_CS_fsm_state11;
+wire   [11:0] src_offset_in_wire12;
+wire   [10:0] wgt_offset_in_wire11;
+reg    is_uop_end;
+reg    ap_enable_reg_pp0_iter1;
+
 reg    [11:0] dst_offset_out_reg;
 reg    [11:0] src_offset_out_reg;
 reg    [10:0] wgt_offset_out_reg;
@@ -494,7 +495,7 @@ reg    [11:0] dst_offset_in_reg;
 reg    [11:0] src_offset_in_reg;
 reg    [10:0] wgt_offset_in_reg;
 reg    [13:0] iter_in_reg;
-reg    [13:0] iter_out_reg;
+reg    [13:0] iter_out_index_reg;
 reg    signed [31:0] uop_current_index_reg;
 wire   [31:0] wgt_mem_addr_wire32;
 wire   [31:0] input_mem_addr_wire32;
@@ -522,7 +523,7 @@ wire   [10:0] weight_index_wire;
 wire   [11:0] src_index_wire;
 wire   [11:0] dst_index_wire;
 
-reg   [9:0] ap_NS_fsm;
+reg    [9:0] ap_NS_fsm;
 
 // power-on initialization
 initial begin
@@ -1196,30 +1197,30 @@ gemm_core gemm_core(
 always @ (*) begin
     case (ap_CS_fsm)
         ap_ST_fsm_state1 : begin
-            if (((1'b1 == ap_CS_fsm_state1) & (ap_start == 1'b1))) begin
+            if (ap_start == 1'b1) begin
                 ap_NS_fsm = ap_ST_fsm_state2;
             end else begin
                 ap_NS_fsm = ap_ST_fsm_state1;
             end
         end
         ap_ST_fsm_state2 : begin  //
-            if (((icmp_iter_out == 1'd1) & (1'b1 == ap_CS_fsm_state2))) begin
+            if (icmp_eq_iter_out == 1'b1) begin
                 ap_NS_fsm = ap_ST_fsm_state1;
             end else begin
                 ap_NS_fsm = ap_ST_fsm_state3;
             end
         end
         ap_ST_fsm_state3 : begin
-            if (((icmp_iter_in == 1'd1) & (1'b1 == ap_CS_fsm_state3))) begin
+            if (icmp_eq_iter_in == 1'b1) begin
                 ap_NS_fsm = ap_ST_fsm_state2;
             end else begin
                 ap_NS_fsm = ap_ST_fsm_pp0_stage0;
             end
         end
         ap_ST_fsm_pp0_stage0 : begin
-            if ((icmp_uop_index_wire == 1'd1) | (ap_enable_reg_pp0_iter0 == 1'b0)) begin
+            if ((icmp_less_uop_index_than_end_wire == 1'b1) | (ap_enable_reg_pp0_iter0 == 1'b0)) begin
                 ap_NS_fsm = ap_ST_fsm_pp0_stage1;
-            end else if ((icmp_uop_index_wire == 1'd0) & (ap_enable_reg_pp0_iter0 == 1'b1)) begin
+            end else if ((icmp_less_uop_index_than_end_wire == 1'b0) & (ap_enable_reg_pp0_iter0 == 1'b1)) begin
                 ap_NS_fsm = ap_ST_fsm_state11;  // get to uop end
             end else begin
                 ap_NS_fsm = ap_ST_fsm_pp0_stage0;
@@ -1268,7 +1269,7 @@ always @ (posedge ap_clk) begin
     end else begin
         if (((1'b1 == is_uop_end) & (1'b1 == ap_CS_fsm_pp0_stage0))) begin
             ap_enable_reg_pp0_iter0 <= 1'b0;
-        end else if (((icmp_iter_in == 1'd0) & (1'b1 == ap_CS_fsm_state3))) begin // when state3 set 1
+        end else if (((icmp_eq_iter_in == 1'b0) & (1'b1 == ap_CS_fsm_state3))) begin // when state3 set 1
             ap_enable_reg_pp0_iter0 <= 1'b1;
         end
     end
@@ -1280,7 +1281,7 @@ always @ (posedge ap_clk) begin
     end else begin
         if ((((1'b1 == ap_CS_fsm_pp0_stage5)) | ((1'b1 == ap_CS_fsm_pp0_stage0)))) begin
             ap_enable_reg_pp0_iter1 <= ap_enable_reg_pp0_iter0;
-        end else if (((icmp_iter_in == 1'd0) & (1'b1 == ap_CS_fsm_state3))) begin
+        end else if (((icmp_eq_iter_in == 1'b0) & (1'b1 == ap_CS_fsm_state3))) begin
             ap_enable_reg_pp0_iter1 <= 1'b0;
         end
     end
@@ -1288,14 +1289,14 @@ end
 
 // iter out loop
 always @ (posedge ap_clk) begin  // 
-    if (((icmp_iter_in == 1'd1) & (1'b1 == ap_CS_fsm_state3))) begin
-        iter_out_reg <= iter_out_index_next_reg;
+    if (((icmp_eq_iter_in == 1'b1) & (1'b1 == ap_CS_fsm_state3))) begin
+        iter_out_index_reg <= iter_out_index_next_reg;
     end else if (((1'b1 == ap_CS_fsm_state1) & (ap_start == 1'b1))) begin
-        iter_out_reg <= 14'd0;
+        iter_out_index_reg <= 14'd0;
     end
 end
 
-assign iter_out_index_next_wire    = (iter_out_reg + 14'd1);
+assign iter_out_index_next_wire    = (iter_out_index_reg + 14'd1);
 
 always @ (posedge ap_clk) begin
     if (((1'b1 == ap_CS_fsm_state1) & (ap_start == 1'b1))) begin
@@ -1303,13 +1304,13 @@ always @ (posedge ap_clk) begin
     end
 end
 
-assign icmp_iter_out         = ((iter_out_reg == inst_iter_out_reg) ? 1'b1 : 1'b0);  //
+assign icmp_eq_iter_out         = ((iter_out_index_reg == inst_iter_out_reg) ? 1'b1 : 1'b0);  //
 
 // iter in loop
 always @ (posedge ap_clk) begin
     if ((1'b1 == ap_CS_fsm_state11)) begin
         iter_in_reg <= iter_in_index_next_reg;
-    end else if (((icmp_iter_out == 1'd0) & (1'b1 == ap_CS_fsm_state2))) begin
+    end else if (((icmp_eq_iter_out == 1'b0) & (1'b1 == ap_CS_fsm_state2))) begin
         iter_in_reg <= 14'd0;
     end
 end
@@ -1317,25 +1318,25 @@ end
 assign iter_in_index_next_wire     = (iter_in_reg  + 14'd1);
 
 always @ (posedge ap_clk) begin
-    if (((icmp_iter_out == 1'd0) & (1'b1 == ap_CS_fsm_state2))) begin
+    if (((icmp_eq_iter_out == 1'b0) & (1'b1 == ap_CS_fsm_state2))) begin
         inst_iter_in_reg <= inst_iter_in_word;
     end
 end
 
-assign icmp_iter_in          = ((iter_in_reg == inst_iter_in_reg)  ? 1'b1 : 1'b0);
+assign icmp_eq_iter_in          = ((iter_in_reg == inst_iter_in_reg)  ? 1'b1 : 1'b0);
 
 
 // uop loop
 always @ (posedge ap_clk) begin
-    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_uop_index_reg == 1'd1))) begin
+    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_uop_index_reg == 1'b1))) begin
         uop_iter_index_reg <= uop_next_index_reg;
-    end else if (((icmp_iter_in == 1'd0) & (1'b1 == ap_CS_fsm_state3))) begin
+    end else if (((icmp_eq_iter_in == 1'b0) & (1'b1 == ap_CS_fsm_state3))) begin
         uop_iter_index_reg <= inst_uop_begin;
     end
 end
 
 always @ (posedge ap_clk) begin  // uop next index
-    if (((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage5) & (icmp_uop_index_reg == 1'd1))) begin
+    if (((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage5) & (icmp_uop_index_reg == 1'b1))) begin
         uop_next_index_reg <= uop_next_index_wire;
     end
 end
@@ -1346,13 +1347,13 @@ assign uop_next_index_wire  = ($signed(32'd1) + $signed(uop_iter_index_reg));  /
 always @ (posedge ap_clk) begin
     if ((1'b1 == ap_CS_fsm_state11)) begin
         dst_offset_in_reg <= dst_offset_in_wire12;
-    end else if (((icmp_iter_out == 1'd0) & (1'b1 == ap_CS_fsm_state2))) begin
+    end else if (((icmp_eq_iter_out == 1'b0) & (1'b1 == ap_CS_fsm_state2))) begin
         dst_offset_in_reg <= dst_offset_out_reg;
     end
 end
 
 always @ (posedge ap_clk) begin
-    if (((icmp_iter_in == 1'd1) & (1'b1 == ap_CS_fsm_state3))) begin
+    if (((icmp_eq_iter_in == 1'b1) & (1'b1 == ap_CS_fsm_state3))) begin
         dst_offset_out_reg <= dst_offset_out_wire12;
     end else if (((1'b1 == ap_CS_fsm_state1) & (ap_start == 1'b1))) begin
         dst_offset_out_reg <= 12'd0;
@@ -1367,13 +1368,13 @@ assign dst_offset_out_wire12         = (inst_dst_factor_out + dst_offset_out_reg
 always @ (posedge ap_clk) begin
     if ((1'b1 == ap_CS_fsm_state11)) begin
         src_offset_in_reg <= src_offset_in_wire12;
-    end else if (((icmp_iter_out == 1'd0) & (1'b1 == ap_CS_fsm_state2))) begin
+    end else if (((icmp_eq_iter_out == 1'b0) & (1'b1 == ap_CS_fsm_state2))) begin
         src_offset_in_reg <= src_offset_out_reg;
     end
 end
 
 always @ (posedge ap_clk) begin
-    if (((icmp_iter_in == 1'd1) & (1'b1 == ap_CS_fsm_state3))) begin
+    if (((icmp_eq_iter_in == 1'b1) & (1'b1 == ap_CS_fsm_state3))) begin
         src_offset_out_reg <= src_offset_out_wire12;
     end else if (((1'b1 == ap_CS_fsm_state1) & (ap_start == 1'b1))) begin
         src_offset_out_reg <= 12'd0;
@@ -1388,13 +1389,13 @@ assign src_offset_out_wire12         = (inst_src_factor_out + src_offset_out_reg
 always @ (posedge ap_clk) begin
     if ((1'b1 == ap_CS_fsm_state11)) begin
         wgt_offset_in_reg <= wgt_offset_in_wire11;
-    end else if (((icmp_iter_out == 1'd0) & (1'b1 == ap_CS_fsm_state2))) begin
+    end else if (((icmp_eq_iter_out == 1'b0) & (1'b1 == ap_CS_fsm_state2))) begin
         wgt_offset_in_reg <= wgt_offset_out_reg;
     end
 end
 
 always @ (posedge ap_clk) begin
-    if (((icmp_iter_in == 1'd1) & (1'b1 == ap_CS_fsm_state3))) begin
+    if (((icmp_eq_iter_in == 1'b1) & (1'b1 == ap_CS_fsm_state3))) begin
         wgt_offset_out_reg <= wgt_offset_out_wire11;
     end else if (((1'b1 == ap_CS_fsm_state1) & (ap_start == 1'b1))) begin
         wgt_offset_out_reg <= 11'd0;
@@ -1407,7 +1408,7 @@ assign wgt_offset_out_wire11        = (inst_wgt_factor_out + wgt_offset_out_reg)
 
 // out addr
 always @ (posedge ap_clk) begin
-    if (((1'b1 == ap_CS_fsm_pp0_stage1) & (icmp_uop_index_reg == 1'd1))) begin
+    if (((1'b1 == ap_CS_fsm_pp0_stage1) & (icmp_uop_index_reg == 1'b1))) begin
         acc_mem_addr_reg              <= dst_index_wire;
         output_mem_addr_reg[11 : 0]   <= dst_index_wire;
     end
@@ -1423,7 +1424,7 @@ end
 // 
 always @ (posedge ap_clk) begin
     if (((1'b1 == ap_CS_fsm_pp0_stage0))) begin
-        icmp_uop_index_reg <= icmp_uop_index_wire;
+        icmp_uop_index_reg <= icmp_less_uop_index_than_end_wire;
     end
 end
 
@@ -1441,13 +1442,13 @@ end
 
 // UOP END
 always @ (posedge ap_clk) begin
-    if (((icmp_iter_in == 1'd0) & (1'b1 == ap_CS_fsm_state3))) begin
+    if (((icmp_eq_iter_in == 1'b0) & (1'b1 == ap_CS_fsm_state3))) begin
         uop_end_reg0[13 : 0] <= inst_uop_end;
     end
 end
 
 always @ (*) begin  // uop index get to uop end
-    if ((icmp_uop_index_wire == 1'd0)) begin
+    if ((icmp_less_uop_index_than_end_wire == 1'b0)) begin
         is_uop_end = 1'b1;
     end else begin
         is_uop_end = 1'b0;
@@ -1455,7 +1456,7 @@ always @ (*) begin  // uop index get to uop end
 end
 
 always @ (*) begin
-    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_uop_index_reg == 1'd1))) begin
+    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_uop_index_reg == 1'b1))) begin
         uop_current_index_reg = uop_next_index_reg;
     end else begin
         uop_current_index_reg = uop_iter_index_reg;
@@ -1472,7 +1473,7 @@ assign ap_CS_fsm_pp0_stage2 = ap_CS_fsm[32'd5];
 assign ap_CS_fsm_pp0_stage5 = ap_CS_fsm[32'd8];
 assign ap_CS_fsm_state11    = ap_CS_fsm[32'd9];
 
-assign icmp_uop_index_wire   = ((uop_current_index_reg <  uop_end_reg0) ? 1'b1 : 1'b0); // 1 for not end
+assign icmp_less_uop_index_than_end_wire   = ((uop_current_index_reg <  uop_end_reg0) ? 1'b1 : 1'b0); // 1 for not end
 
 // UOP mem OUTPUT interface
 assign uop_mem_V_2_address0 = uop_current_index_reg;
@@ -1505,7 +1506,7 @@ always @ (*) begin
 end
 
 always @ (*) begin
-    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_uop_index_reg == 1'd1))) begin
+    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_uop_index_reg == 1'b1))) begin
         acc_mem_V_2_we0 = 64'd18446744073709551615; // all 1
     end else begin
         acc_mem_V_2_we0 = 64'd0;
@@ -1567,7 +1568,7 @@ always @ (*) begin
     end
 end
 always @ (*) begin
-    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_uop_index_reg == 1'd1))) begin
+    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_uop_index_reg == 1'b1))) begin
         out_mem_V_WEN_A = 16'd65535;
     end else begin
         out_mem_V_WEN_A = 16'd0;
@@ -1577,7 +1578,7 @@ assign out_mem_V_Din_A  = {{{{{{{{{{{{{{{{gemm_core_output_15}, {gemm_core_outpu
 
 // ap done OUTPUT interface
 always @ (*) begin
-    if ((((icmp_iter_out == 1'd1) & (1'b1 == ap_CS_fsm_state2)) | ((ap_start == 1'b0) & (1'b1 == ap_CS_fsm_state1)))) begin
+    if ((((icmp_eq_iter_out == 1'b1) & (1'b1 == ap_CS_fsm_state2)) | ((ap_start == 1'b0) & (1'b1 == ap_CS_fsm_state1)))) begin
         ap_done = 1'b1;
     end else begin
         ap_done = 1'b0;
@@ -1595,7 +1596,7 @@ end
 
 // ap ready OUTPUT interface
 always @ (*) begin  // iter out done
-    if (((icmp_iter_out == 1'd1) & (1'b1 == ap_CS_fsm_state2))) begin
+    if (((icmp_eq_iter_out == 1'b1) & (1'b1 == ap_CS_fsm_state2))) begin
         ap_ready = 1'b1;
     end else begin
         ap_ready = 1'b0;
