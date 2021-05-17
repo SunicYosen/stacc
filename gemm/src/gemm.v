@@ -452,6 +452,7 @@ wire          gemm_core_in_valid;
 wire          gemm_core_output_valid;
 wire          gemm_core_state_done;
 
+reg           gemm_in_valid_reg;
 
 (* fsm_encoding = "none" *) reg   [9:0] ap_CS_fsm;
 wire    ap_CS_fsm_state1;
@@ -464,7 +465,7 @@ wire    ap_CS_fsm_state2;
 wire    icmp_eq_iter_out;
 wire    icmp_eq_iter_in;
 wire    icmp_less_uop_index_than_end_wire;
-reg     icmp_uop_index_reg;
+reg     icmp_less_uop_index_than_end_reg_iter1;
 wire    ap_CS_fsm_state3;
 wire   [13:0] iter_in_index_next_wire;
 reg   [13:0] iter_in_index_next_reg;
@@ -1190,7 +1191,9 @@ gemm_core gemm_core(
     .o_e(gemm_core_output_14),
     .o_f(gemm_core_output_15),
 
-    .gemm_reset(gemm_core_gemm_reset)
+    .gemm_reset(gemm_core_gemm_reset),
+    .in_valid(gemm_core_in_valid),
+    .output_valid(gemm_core_output_valid)
 );
 
 // State Machine
@@ -1328,7 +1331,7 @@ assign icmp_eq_iter_in          = ((iter_in_reg == inst_iter_in_reg)  ? 1'b1 : 1
 
 // uop loop
 always @ (posedge ap_clk) begin
-    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_uop_index_reg == 1'b1))) begin
+    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_less_uop_index_than_end_reg_iter1 == 1'b1))) begin
         uop_iter_index_reg <= uop_next_index_reg;
     end else if (((icmp_eq_iter_in == 1'b0) & (1'b1 == ap_CS_fsm_state3))) begin
         uop_iter_index_reg <= inst_uop_begin;
@@ -1336,7 +1339,7 @@ always @ (posedge ap_clk) begin
 end
 
 always @ (posedge ap_clk) begin  // uop next index
-    if (((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage5) & (icmp_uop_index_reg == 1'b1))) begin
+    if (((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage5) & (icmp_less_uop_index_than_end_reg_iter1 == 1'b1))) begin
         uop_next_index_reg <= uop_next_index_wire;
     end
 end
@@ -1408,7 +1411,7 @@ assign wgt_offset_out_wire11        = (inst_wgt_factor_out + wgt_offset_out_reg)
 
 // out addr
 always @ (posedge ap_clk) begin
-    if (((1'b1 == ap_CS_fsm_pp0_stage1) & (icmp_uop_index_reg == 1'b1))) begin
+    if (((1'b1 == ap_CS_fsm_pp0_stage1) & (icmp_less_uop_index_than_end_reg_iter1 == 1'b1))) begin
         acc_mem_addr_reg              <= dst_index_wire;
         output_mem_addr_reg[11 : 0]   <= dst_index_wire;
     end
@@ -1424,7 +1427,7 @@ end
 // 
 always @ (posedge ap_clk) begin
     if (((1'b1 == ap_CS_fsm_pp0_stage0))) begin
-        icmp_uop_index_reg <= icmp_less_uop_index_than_end_wire;
+        icmp_less_uop_index_than_end_reg_iter1 <= icmp_less_uop_index_than_end_wire;
     end
 end
 
@@ -1456,7 +1459,7 @@ always @ (*) begin  // uop index get to uop end
 end
 
 always @ (*) begin
-    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_uop_index_reg == 1'b1))) begin
+    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_less_uop_index_than_end_reg_iter1 == 1'b1))) begin
         uop_current_index_reg = uop_next_index_reg;
     end else begin
         uop_current_index_reg = uop_iter_index_reg;
@@ -1506,7 +1509,7 @@ always @ (*) begin
 end
 
 always @ (*) begin
-    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_uop_index_reg == 1'b1))) begin
+    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_less_uop_index_than_end_reg_iter1 == 1'b1))) begin
         acc_mem_V_2_we0 = 64'd18446744073709551615; // all 1
     end else begin
         acc_mem_V_2_we0 = 64'd0;
@@ -1560,20 +1563,37 @@ end
 
 // out mem OUTPUT interface
 assign out_mem_V_Addr_A = output_mem_addr_reg << 32'd4;
+// always @ (*) begin
+//     if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) )) begin
+//         out_mem_V_EN_A = 1'b1;
+//     end else begin
+//         out_mem_V_EN_A = 1'b0;
+//     end
+// end
+// always @ (*) begin
+//     if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_less_uop_index_than_end_reg_iter1 == 1'b1))) begin
+//         out_mem_V_WEN_A = 16'd65535;
+//     end else begin
+//         out_mem_V_WEN_A = 16'd0;
+//     end
+// end
+
 always @ (*) begin
-    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) )) begin
+    if (gemm_core_output_valid) begin
         out_mem_V_EN_A = 1'b1;
     end else begin
         out_mem_V_EN_A = 1'b0;
     end
 end
+
 always @ (*) begin
-    if (((ap_enable_reg_pp0_iter1 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0) & (icmp_uop_index_reg == 1'b1))) begin
+    if (gemm_core_output_valid) begin
         out_mem_V_WEN_A = 16'd65535;
     end else begin
         out_mem_V_WEN_A = 16'd0;
     end
 end
+
 assign out_mem_V_Din_A  = {{{{{{{{{{{{{{{{gemm_core_output_15}, {gemm_core_output_14}}, {gemm_core_output_13}}, {gemm_core_output_12}}, {gemm_core_output_11}}, {gemm_core_output_10}}, {gemm_core_output_9}}, {gemm_core_output_8}}, {gemm_core_output_7}}, {gemm_core_output_6}}, {gemm_core_output_5}}, {gemm_core_output_4}}, {gemm_core_output_3}}, {gemm_core_output_2}}, {gemm_core_output_1}}, {gemm_core_output_0}};
 
 // ap done OUTPUT interface
@@ -1602,6 +1622,17 @@ always @ (*) begin  // iter out done
         ap_ready = 1'b0;
     end
 end
+
+// in_valid
+always @ (*) begin
+    if (((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage1))) begin
+        gemm_in_valid_reg = 1'b1;
+    end else begin
+        gemm_in_valid_reg = 1'b0;
+    end
+end
+
+assign gemm_core_in_valid = gemm_in_valid_reg;
 
 // Const
 always @ (posedge ap_clk) begin

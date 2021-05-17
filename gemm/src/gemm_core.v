@@ -335,6 +335,8 @@ module gemm_core (
         o_f,
 
         gemm_reset,
+        in_valid,
+        output_valid,
 );
 
 
@@ -628,7 +630,6 @@ input  [31:0] a_c;
 input  [31:0] a_d;
 input  [31:0] a_e;
 input  [31:0] a_f;
-input   gemm_reset;
 output  [31:0] a_out_0;
 output  [31:0] a_out_1;
 output  [31:0] a_out_2;
@@ -661,6 +662,10 @@ output  [7:0] o_c;
 output  [7:0] o_d;
 output  [7:0] o_e;
 output  [7:0] o_f;
+
+input   gemm_reset;
+input   in_valid;
+output  output_valid;
 
 reg   [0:0] gemm_reset_read_reg_59022;
 wire    ap_block_state1_pp0_stage0_iter0;
@@ -11296,6 +11301,89 @@ reg   [31:0] a_d_int_reg;
 reg   [31:0] a_e_int_reg;
 reg   [31:0] a_f_int_reg;
 reg    gemm_reset_int_reg;
+
+reg   valid_iter0;
+reg   valid_iter1;
+reg   valid_iter2;
+reg   valid_iter3;
+reg   valid_iter4;
+reg   valid_iter5;
+reg   valid_iter6;
+reg   valid_iter7;
+
+always@(posedge ap_clk)begin // stage2
+        if(ap_rst) begin
+                valid_iter0 <= 1'b0;
+        end
+        else begin
+                valid_iter0 <= in_valid;
+        end
+end
+
+always@(posedge ap_clk)begin // stage3
+        if(ap_rst) begin
+                valid_iter1 <= 1'b0;
+        end
+        else begin
+                valid_iter1 <= valid_iter0;
+        end
+end
+
+always@(posedge ap_clk)begin // stage4
+        if(ap_rst) begin
+                valid_iter2 <= 1'b0;
+        end
+        else begin
+                valid_iter2 <= valid_iter1;
+        end
+end
+
+always@(posedge ap_clk)begin // stage5
+        if(ap_rst) begin
+                valid_iter3 <= 1'b0;
+        end
+        else begin
+                valid_iter3 <= valid_iter2;
+        end
+end
+
+always@(posedge ap_clk)begin //stage0
+        if(ap_rst) begin
+                valid_iter4 <= 1'b0;
+        end
+        else begin
+                valid_iter4 <= valid_iter3;
+        end
+end
+
+assign output_valid = valid_iter4;
+
+always@(posedge ap_clk)begin
+        if(ap_rst) begin
+                valid_iter5 <= 1'b0;
+        end
+        else begin
+                valid_iter5 <= valid_iter4;
+        end
+end
+
+always@(posedge ap_clk)begin
+        if(ap_rst) begin
+                valid_iter6 <= 1'b0;
+        end
+        else begin
+                valid_iter6 <= valid_iter5;
+        end
+end
+
+always@(posedge ap_clk)begin
+        if(ap_rst) begin
+                valid_iter7 <= 1'b0;
+        end
+        else begin
+                valid_iter7 <= valid_iter6;
+        end
+end
 
 always @ (posedge ap_clk) begin
     a_0_int_reg <= a_0;
