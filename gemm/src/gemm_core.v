@@ -11356,7 +11356,7 @@ always@(posedge ap_clk)begin //stage0
         end
 end
 
-assign output_valid = valid_iter4;
+assign output_valid = valid_iter3;
 
 always@(posedge ap_clk)begin
         if(ap_rst) begin
