@@ -485,7 +485,7 @@ wire   [11:0] dst_offset_in_wire12;
 wire    ap_CS_fsm_state11;
 wire   [11:0] src_offset_in_wire12;
 wire   [10:0] wgt_offset_in_wire11;
-reg    is_uop_end;
+reg    is_uop_index_end;
 
 reg    [11:0] dst_offset_out_reg;
 reg    [11:0] src_offset_out_reg;
@@ -1242,6 +1242,7 @@ always @ (*) begin
         ap_ST_fsm_state11 : begin
             ap_NS_fsm = ap_ST_fsm_state3;
         end
+
         default : begin
             ap_NS_fsm = 'bx;
         end
@@ -1260,7 +1261,7 @@ always @ (posedge ap_clk) begin
     if (ap_rst == 1'b1) begin
         ap_enable_reg_pp0_iter0 <= 1'b0;
     end else begin
-        if (((1'b1 == is_uop_end) & (1'b1 == ap_CS_fsm_pp0_stage0))) begin
+        if (((1'b1 == is_uop_index_end) & (1'b1 == ap_CS_fsm_pp0_stage0))) begin
             ap_enable_reg_pp0_iter0 <= 1'b0;
         end else if (((icmp_eq_iter_in == 1'b0) & (1'b1 == ap_CS_fsm_state3))) begin // when state3 set 1
             ap_enable_reg_pp0_iter0 <= 1'b1;
@@ -1428,9 +1429,9 @@ end
 
 always @ (*) begin  // uop index get to uop end
     if ((icmp_less_uop_index_than_end_wire == 1'b0)) begin
-        is_uop_end = 1'b1;
+        is_uop_index_end = 1'b1;
     end else begin
-        is_uop_end = 1'b0;
+        is_uop_index_end = 1'b0;
     end
 end
 

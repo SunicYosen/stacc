@@ -379,8 +379,8 @@ module gemm_core(
     output [7:0] o_e,
     output [7:0] o_f,
 
-    input           in_valid,
     input           gemm_reset,
+    input           in_valid,
     output          output_valid,
     output          state_done);
 
@@ -1626,9 +1626,9 @@ always@(posedge clk) begin
     end
 end
 
-// #region get ACC
+// ACC_x
 always@(posedge clk)begin
-    if(rst)
+    if(rst | (in_valid & gemm_reset)) // set to 0 if reset or gemm_reset
     begin
         acc_0 <= 32'h0000_0000;
         acc_1 <= 32'h0000_0000;
@@ -1647,7 +1647,7 @@ always@(posedge clk)begin
         acc_e <= 32'h0000_0000;
         acc_f <= 32'h0000_0000;
     end
-    else if(in_valid & (is_state_done | is_state_idle))
+    else if(in_valid)
     begin
 		acc_0	<= a_0;
 		acc_1	<= a_1;
@@ -1667,10 +1667,10 @@ always@(posedge clk)begin
 		acc_f	<= a_f;
     end
 end
-// #endregion
 
+// INPUT_x
 always@(posedge clk)begin
-    if(rst)
+    if(rst | (in_valid & gemm_reset)) // reset or gemm_reset
     begin
         input_0 <= 8'b0000_0000;
         input_1 <= 8'b0000_0000;
@@ -1689,7 +1689,7 @@ always@(posedge clk)begin
         input_e <= 8'b0000_0000;
         input_f <= 8'b0000_0000;
     end
-    else if(in_valid & (is_state_done | is_state_idle))
+    else if(in_valid)
     begin
         input_0	<= i_0;
         input_1	<= i_1;
@@ -1710,6 +1710,7 @@ always@(posedge clk)begin
     end
 end
 
+// WEIGHT_xx
 always@(posedge clk)begin
     if(rst)
     begin
@@ -1970,7 +1971,7 @@ always@(posedge clk)begin
 		weight_fe	<= 8'b0000_0000;
 		weight_ff	<= 8'b0000_0000;
     end
-    else if(in_valid & (is_state_done | is_state_idle))
+    else if(in_valid)
     begin
         weight_00	<= w_00;
         weight_01	<= w_01;
@@ -2265,43 +2266,43 @@ reg [7:0] current_input_d;
 reg [7:0] current_input_e;
 reg [7:0] current_input_f;
 
-wire input_0_zero_flag;
+wire       input_0_zero_flag;
 wire [2:0] input_0_lo_position;
-wire input_1_zero_flag;
+wire       input_1_zero_flag;
 wire [2:0] input_1_lo_position;
-wire input_2_zero_flag;
+wire       input_2_zero_flag;
 wire [2:0] input_2_lo_position;
-wire input_3_zero_flag;
+wire       input_3_zero_flag;
 wire [2:0] input_3_lo_position;
-wire input_4_zero_flag;
+wire       input_4_zero_flag;
 wire [2:0] input_4_lo_position;
-wire input_5_zero_flag;
+wire       input_5_zero_flag;
 wire [2:0] input_5_lo_position;
-wire input_6_zero_flag;
+wire       input_6_zero_flag;
 wire [2:0] input_6_lo_position;
-wire input_7_zero_flag;
+wire       input_7_zero_flag;
 wire [2:0] input_7_lo_position;
-wire input_8_zero_flag;
+wire       input_8_zero_flag;
 wire [2:0] input_8_lo_position;
-wire input_9_zero_flag;
+wire       input_9_zero_flag;
 wire [2:0] input_9_lo_position;
-wire input_a_zero_flag;
+wire       input_a_zero_flag;
 wire [2:0] input_a_lo_position;
-wire input_b_zero_flag;
+wire       input_b_zero_flag;
 wire [2:0] input_b_lo_position;
-wire input_c_zero_flag;
+wire       input_c_zero_flag;
 wire [2:0] input_c_lo_position;
-wire input_d_zero_flag;
+wire       input_d_zero_flag;
 wire [2:0] input_d_lo_position;
-wire input_e_zero_flag;
+wire       input_e_zero_flag;
 wire [2:0] input_e_lo_position;
-wire input_f_zero_flag;
+wire       input_f_zero_flag;
 wire [2:0] input_f_lo_position;
 
 // Input Mask
 always @(*) begin
     if(~ input_0_zero_flag) begin
-        current_input_mask_0 <= 8'b0111_1111 >> input_0_lo_position;
+        current_input_mask_0 <= ~(8'b1111_1111 << input_0_lo_position);
     end
     else begin
         current_input_mask_0 <= 8'b1111_1111;
@@ -2310,7 +2311,7 @@ end
 
 always @(*) begin
     if(~ input_1_zero_flag) begin
-        current_input_mask_1 <= 8'b0111_1111 >> input_1_lo_position;
+        current_input_mask_1 <= ~(8'b1111_1111 << input_1_lo_position);
     end
     else begin
         current_input_mask_1 <= 8'b1111_1111;
@@ -2319,7 +2320,7 @@ end
 
 always @(*) begin
     if(~ input_2_zero_flag) begin
-        current_input_mask_2 <= 8'b0111_1111 >> input_2_lo_position;
+        current_input_mask_2 <= ~(8'b1111_1111 << input_2_lo_position);
     end
     else begin
         current_input_mask_2 <= 8'b1111_1111;
@@ -2328,7 +2329,7 @@ end
 
 always @(*) begin
     if(~ input_3_zero_flag) begin
-        current_input_mask_3 <= 8'b0111_1111 >> input_3_lo_position;
+        current_input_mask_3 <= ~(8'b1111_1111 << input_3_lo_position);
     end
     else begin
         current_input_mask_3 <= 8'b1111_1111;
@@ -2337,7 +2338,7 @@ end
 
 always @(*) begin
     if(~ input_4_zero_flag) begin
-        current_input_mask_4 <= 8'b0111_1111 >> input_4_lo_position;
+        current_input_mask_4 <= ~(8'b1111_1111 << input_4_lo_position);
     end
     else begin
         current_input_mask_4 <= 8'b1111_1111;
@@ -2346,7 +2347,7 @@ end
 
 always @(*) begin
     if(~ input_5_zero_flag) begin
-        current_input_mask_5 <= 8'b0111_1111 >> input_5_lo_position;
+        current_input_mask_5 <= ~(8'b1111_1111 << input_5_lo_position);
     end
     else begin
         current_input_mask_5 <= 8'b1111_1111;
@@ -2355,7 +2356,7 @@ end
 
 always @(*) begin
     if(~ input_6_zero_flag) begin
-        current_input_mask_6 <= 8'b0111_1111 >> input_6_lo_position;
+        current_input_mask_6 <= ~(8'b1111_1111 << input_6_lo_position);
     end
     else begin
         current_input_mask_6 <= 8'b1111_1111;
@@ -2364,7 +2365,7 @@ end
 
 always @(*) begin
     if(~ input_7_zero_flag) begin
-        current_input_mask_7 <= 8'b0111_1111 >> input_7_lo_position;
+        current_input_mask_7 <= ~(8'b1111_1111 << input_7_lo_position);
     end
     else begin
         current_input_mask_7 <= 8'b1111_1111;
@@ -2373,7 +2374,7 @@ end
 
 always @(*) begin
     if(~ input_8_zero_flag) begin
-        current_input_mask_8 <= 8'b0111_1111 >> input_8_lo_position;
+        current_input_mask_8 <= ~(8'b1111_1111 << input_8_lo_position);
     end
     else begin
         current_input_mask_8 <= 8'b1111_1111;
@@ -2382,7 +2383,7 @@ end
 
 always @(*) begin
     if(~ input_9_zero_flag) begin
-        current_input_mask_9 <= 8'b0111_1111 >> input_9_lo_position;
+        current_input_mask_9 <= ~(8'b1111_1111 << input_9_lo_position);
     end
     else begin
         current_input_mask_9 <= 8'b1111_1111;
@@ -2391,7 +2392,7 @@ end
 
 always @(*) begin
     if(~ input_a_zero_flag) begin
-        current_input_mask_a <= 8'b0111_1111 >> input_a_lo_position;
+        current_input_mask_a <= ~(8'b1111_1111 << input_a_lo_position);
     end
     else begin
         current_input_mask_a <= 8'b1111_1111;
@@ -2400,7 +2401,7 @@ end
 
 always @(*) begin
     if(~ input_b_zero_flag) begin
-        current_input_mask_b <= 8'b0111_1111 >> input_b_lo_position;
+        current_input_mask_b <= ~(8'b1111_1111 << input_b_lo_position);
     end
     else begin
         current_input_mask_b <= 8'b1111_1111;
@@ -2409,7 +2410,7 @@ end
 
 always @(*) begin
     if(~ input_c_zero_flag) begin
-        current_input_mask_c <= 8'b0111_1111 >> input_c_lo_position;
+        current_input_mask_c <= ~(8'b1111_1111 << input_c_lo_position);
     end
     else begin
         current_input_mask_c <= 8'b1111_1111;
@@ -2418,7 +2419,7 @@ end
 
 always @(*) begin
     if(~ input_d_zero_flag) begin
-        current_input_mask_d <= 8'b0111_1111 >> input_d_lo_position;
+        current_input_mask_d <= ~(8'b1111_1111 << input_d_lo_position);
     end
     else begin
         current_input_mask_d <= 8'b1111_1111;
@@ -2427,7 +2428,7 @@ end
 
 always @(*) begin
     if(~ input_e_zero_flag) begin
-        current_input_mask_e <= 8'b0111_1111 >> input_e_lo_position;
+        current_input_mask_e <= ~(8'b1111_1111 << input_e_lo_position);
     end
     else begin
         current_input_mask_e <= 8'b1111_1111;
@@ -2436,7 +2437,7 @@ end
 
 always @(*) begin
     if(~ input_f_zero_flag) begin
-        current_input_mask_f <= 8'b0111_1111 >> input_f_lo_position;
+        current_input_mask_f <= ~(8'b1111_1111 << input_f_lo_position);
     end
     else begin
         current_input_mask_f <= 8'b1111_1111;
@@ -2659,8 +2660,8 @@ wire   group2_zero;
 wire   group3_zero;
 assign group0_zero = input_0_zero_flag & input_1_zero_flag & input_2_zero_flag & input_3_zero_flag;
 assign group1_zero = input_4_zero_flag & input_5_zero_flag & input_6_zero_flag & input_7_zero_flag;
-assign group0_zero = input_8_zero_flag & input_9_zero_flag & input_a_zero_flag & input_b_zero_flag;
-assign group1_zero = input_c_zero_flag & input_d_zero_flag & input_e_zero_flag & input_f_zero_flag;
+assign group2_zero = input_8_zero_flag & input_9_zero_flag & input_a_zero_flag & input_b_zero_flag;
+assign group3_zero = input_c_zero_flag & input_d_zero_flag & input_e_zero_flag & input_f_zero_flag;
 
 assign all_zeros = group0_zero & group1_zero & group2_zero & group3_zero;
 
@@ -2934,262 +2935,262 @@ assign weight_ext_fd = {{8{weight_fd[7]}}, w_fd};
 assign weight_ext_fe = {{8{weight_fe[7]}}, w_fe};
 assign weight_ext_ff = {{8{weight_ff[7]}}, w_ff};
 
-assign shift_result_00 = weight_ext_00 << input_0_lo_position;
-assign shift_result_01 = weight_ext_01 << input_1_lo_position;
-assign shift_result_02 = weight_ext_02 << input_2_lo_position;
-assign shift_result_03 = weight_ext_03 << input_3_lo_position;
-assign shift_result_04 = weight_ext_04 << input_4_lo_position;
-assign shift_result_05 = weight_ext_05 << input_5_lo_position;
-assign shift_result_06 = weight_ext_06 << input_6_lo_position;
-assign shift_result_07 = weight_ext_07 << input_7_lo_position;
-assign shift_result_08 = weight_ext_08 << input_8_lo_position;
-assign shift_result_09 = weight_ext_09 << input_9_lo_position;
-assign shift_result_0a = weight_ext_0a << input_a_lo_position;
-assign shift_result_0b = weight_ext_0b << input_b_lo_position;
-assign shift_result_0c = weight_ext_0c << input_c_lo_position;
-assign shift_result_0d = weight_ext_0d << input_d_lo_position;
-assign shift_result_0e = weight_ext_0e << input_e_lo_position;
-assign shift_result_0f = weight_ext_0f << input_f_lo_position;
-assign shift_result_10 = weight_ext_10 << input_0_lo_position;
-assign shift_result_11 = weight_ext_11 << input_1_lo_position;
-assign shift_result_12 = weight_ext_12 << input_2_lo_position;
-assign shift_result_13 = weight_ext_13 << input_3_lo_position;
-assign shift_result_14 = weight_ext_14 << input_4_lo_position;
-assign shift_result_15 = weight_ext_15 << input_5_lo_position;
-assign shift_result_16 = weight_ext_16 << input_6_lo_position;
-assign shift_result_17 = weight_ext_17 << input_7_lo_position;
-assign shift_result_18 = weight_ext_18 << input_8_lo_position;
-assign shift_result_19 = weight_ext_19 << input_9_lo_position;
-assign shift_result_1a = weight_ext_1a << input_a_lo_position;
-assign shift_result_1b = weight_ext_1b << input_b_lo_position;
-assign shift_result_1c = weight_ext_1c << input_c_lo_position;
-assign shift_result_1d = weight_ext_1d << input_d_lo_position;
-assign shift_result_1e = weight_ext_1e << input_e_lo_position;
-assign shift_result_1f = weight_ext_1f << input_f_lo_position;
-assign shift_result_20 = weight_ext_20 << input_0_lo_position;
-assign shift_result_21 = weight_ext_21 << input_1_lo_position;
-assign shift_result_22 = weight_ext_22 << input_2_lo_position;
-assign shift_result_23 = weight_ext_23 << input_3_lo_position;
-assign shift_result_24 = weight_ext_24 << input_4_lo_position;
-assign shift_result_25 = weight_ext_25 << input_5_lo_position;
-assign shift_result_26 = weight_ext_26 << input_6_lo_position;
-assign shift_result_27 = weight_ext_27 << input_7_lo_position;
-assign shift_result_28 = weight_ext_28 << input_8_lo_position;
-assign shift_result_29 = weight_ext_29 << input_9_lo_position;
-assign shift_result_2a = weight_ext_2a << input_a_lo_position;
-assign shift_result_2b = weight_ext_2b << input_b_lo_position;
-assign shift_result_2c = weight_ext_2c << input_c_lo_position;
-assign shift_result_2d = weight_ext_2d << input_d_lo_position;
-assign shift_result_2e = weight_ext_2e << input_e_lo_position;
-assign shift_result_2f = weight_ext_2f << input_f_lo_position;
-assign shift_result_30 = weight_ext_30 << input_0_lo_position;
-assign shift_result_31 = weight_ext_31 << input_1_lo_position;
-assign shift_result_32 = weight_ext_32 << input_2_lo_position;
-assign shift_result_33 = weight_ext_33 << input_3_lo_position;
-assign shift_result_34 = weight_ext_34 << input_4_lo_position;
-assign shift_result_35 = weight_ext_35 << input_5_lo_position;
-assign shift_result_36 = weight_ext_36 << input_6_lo_position;
-assign shift_result_37 = weight_ext_37 << input_7_lo_position;
-assign shift_result_38 = weight_ext_38 << input_8_lo_position;
-assign shift_result_39 = weight_ext_39 << input_9_lo_position;
-assign shift_result_3a = weight_ext_3a << input_a_lo_position;
-assign shift_result_3b = weight_ext_3b << input_b_lo_position;
-assign shift_result_3c = weight_ext_3c << input_c_lo_position;
-assign shift_result_3d = weight_ext_3d << input_d_lo_position;
-assign shift_result_3e = weight_ext_3e << input_e_lo_position;
-assign shift_result_3f = weight_ext_3f << input_f_lo_position;
-assign shift_result_40 = weight_ext_40 << input_0_lo_position;
-assign shift_result_41 = weight_ext_41 << input_1_lo_position;
-assign shift_result_42 = weight_ext_42 << input_2_lo_position;
-assign shift_result_43 = weight_ext_43 << input_3_lo_position;
-assign shift_result_44 = weight_ext_44 << input_4_lo_position;
-assign shift_result_45 = weight_ext_45 << input_5_lo_position;
-assign shift_result_46 = weight_ext_46 << input_6_lo_position;
-assign shift_result_47 = weight_ext_47 << input_7_lo_position;
-assign shift_result_48 = weight_ext_48 << input_8_lo_position;
-assign shift_result_49 = weight_ext_49 << input_9_lo_position;
-assign shift_result_4a = weight_ext_4a << input_a_lo_position;
-assign shift_result_4b = weight_ext_4b << input_b_lo_position;
-assign shift_result_4c = weight_ext_4c << input_c_lo_position;
-assign shift_result_4d = weight_ext_4d << input_d_lo_position;
-assign shift_result_4e = weight_ext_4e << input_e_lo_position;
-assign shift_result_4f = weight_ext_4f << input_f_lo_position;
-assign shift_result_50 = weight_ext_50 << input_0_lo_position;
-assign shift_result_51 = weight_ext_51 << input_1_lo_position;
-assign shift_result_52 = weight_ext_52 << input_2_lo_position;
-assign shift_result_53 = weight_ext_53 << input_3_lo_position;
-assign shift_result_54 = weight_ext_54 << input_4_lo_position;
-assign shift_result_55 = weight_ext_55 << input_5_lo_position;
-assign shift_result_56 = weight_ext_56 << input_6_lo_position;
-assign shift_result_57 = weight_ext_57 << input_7_lo_position;
-assign shift_result_58 = weight_ext_58 << input_8_lo_position;
-assign shift_result_59 = weight_ext_59 << input_9_lo_position;
-assign shift_result_5a = weight_ext_5a << input_a_lo_position;
-assign shift_result_5b = weight_ext_5b << input_b_lo_position;
-assign shift_result_5c = weight_ext_5c << input_c_lo_position;
-assign shift_result_5d = weight_ext_5d << input_d_lo_position;
-assign shift_result_5e = weight_ext_5e << input_e_lo_position;
-assign shift_result_5f = weight_ext_5f << input_f_lo_position;
-assign shift_result_60 = weight_ext_60 << input_0_lo_position;
-assign shift_result_61 = weight_ext_61 << input_1_lo_position;
-assign shift_result_62 = weight_ext_62 << input_2_lo_position;
-assign shift_result_63 = weight_ext_63 << input_3_lo_position;
-assign shift_result_64 = weight_ext_64 << input_4_lo_position;
-assign shift_result_65 = weight_ext_65 << input_5_lo_position;
-assign shift_result_66 = weight_ext_66 << input_6_lo_position;
-assign shift_result_67 = weight_ext_67 << input_7_lo_position;
-assign shift_result_68 = weight_ext_68 << input_8_lo_position;
-assign shift_result_69 = weight_ext_69 << input_9_lo_position;
-assign shift_result_6a = weight_ext_6a << input_a_lo_position;
-assign shift_result_6b = weight_ext_6b << input_b_lo_position;
-assign shift_result_6c = weight_ext_6c << input_c_lo_position;
-assign shift_result_6d = weight_ext_6d << input_d_lo_position;
-assign shift_result_6e = weight_ext_6e << input_e_lo_position;
-assign shift_result_6f = weight_ext_6f << input_f_lo_position;
-assign shift_result_70 = weight_ext_70 << input_0_lo_position;
-assign shift_result_71 = weight_ext_71 << input_1_lo_position;
-assign shift_result_72 = weight_ext_72 << input_2_lo_position;
-assign shift_result_73 = weight_ext_73 << input_3_lo_position;
-assign shift_result_74 = weight_ext_74 << input_4_lo_position;
-assign shift_result_75 = weight_ext_75 << input_5_lo_position;
-assign shift_result_76 = weight_ext_76 << input_6_lo_position;
-assign shift_result_77 = weight_ext_77 << input_7_lo_position;
-assign shift_result_78 = weight_ext_78 << input_8_lo_position;
-assign shift_result_79 = weight_ext_79 << input_9_lo_position;
-assign shift_result_7a = weight_ext_7a << input_a_lo_position;
-assign shift_result_7b = weight_ext_7b << input_b_lo_position;
-assign shift_result_7c = weight_ext_7c << input_c_lo_position;
-assign shift_result_7d = weight_ext_7d << input_d_lo_position;
-assign shift_result_7e = weight_ext_7e << input_e_lo_position;
-assign shift_result_7f = weight_ext_7f << input_f_lo_position;
-assign shift_result_80 = weight_ext_80 << input_0_lo_position;
-assign shift_result_81 = weight_ext_81 << input_1_lo_position;
-assign shift_result_82 = weight_ext_82 << input_2_lo_position;
-assign shift_result_83 = weight_ext_83 << input_3_lo_position;
-assign shift_result_84 = weight_ext_84 << input_4_lo_position;
-assign shift_result_85 = weight_ext_85 << input_5_lo_position;
-assign shift_result_86 = weight_ext_86 << input_6_lo_position;
-assign shift_result_87 = weight_ext_87 << input_7_lo_position;
-assign shift_result_88 = weight_ext_88 << input_8_lo_position;
-assign shift_result_89 = weight_ext_89 << input_9_lo_position;
-assign shift_result_8a = weight_ext_8a << input_a_lo_position;
-assign shift_result_8b = weight_ext_8b << input_b_lo_position;
-assign shift_result_8c = weight_ext_8c << input_c_lo_position;
-assign shift_result_8d = weight_ext_8d << input_d_lo_position;
-assign shift_result_8e = weight_ext_8e << input_e_lo_position;
-assign shift_result_8f = weight_ext_8f << input_f_lo_position;
-assign shift_result_90 = weight_ext_90 << input_0_lo_position;
-assign shift_result_91 = weight_ext_91 << input_1_lo_position;
-assign shift_result_92 = weight_ext_92 << input_2_lo_position;
-assign shift_result_93 = weight_ext_93 << input_3_lo_position;
-assign shift_result_94 = weight_ext_94 << input_4_lo_position;
-assign shift_result_95 = weight_ext_95 << input_5_lo_position;
-assign shift_result_96 = weight_ext_96 << input_6_lo_position;
-assign shift_result_97 = weight_ext_97 << input_7_lo_position;
-assign shift_result_98 = weight_ext_98 << input_8_lo_position;
-assign shift_result_99 = weight_ext_99 << input_9_lo_position;
-assign shift_result_9a = weight_ext_9a << input_a_lo_position;
-assign shift_result_9b = weight_ext_9b << input_b_lo_position;
-assign shift_result_9c = weight_ext_9c << input_c_lo_position;
-assign shift_result_9d = weight_ext_9d << input_d_lo_position;
-assign shift_result_9e = weight_ext_9e << input_e_lo_position;
-assign shift_result_9f = weight_ext_9f << input_f_lo_position;
-assign shift_result_a0 = weight_ext_a0 << input_0_lo_position;
-assign shift_result_a1 = weight_ext_a1 << input_1_lo_position;
-assign shift_result_a2 = weight_ext_a2 << input_2_lo_position;
-assign shift_result_a3 = weight_ext_a3 << input_3_lo_position;
-assign shift_result_a4 = weight_ext_a4 << input_4_lo_position;
-assign shift_result_a5 = weight_ext_a5 << input_5_lo_position;
-assign shift_result_a6 = weight_ext_a6 << input_6_lo_position;
-assign shift_result_a7 = weight_ext_a7 << input_7_lo_position;
-assign shift_result_a8 = weight_ext_a8 << input_8_lo_position;
-assign shift_result_a9 = weight_ext_a9 << input_9_lo_position;
-assign shift_result_aa = weight_ext_aa << input_a_lo_position;
-assign shift_result_ab = weight_ext_ab << input_b_lo_position;
-assign shift_result_ac = weight_ext_ac << input_c_lo_position;
-assign shift_result_ad = weight_ext_ad << input_d_lo_position;
-assign shift_result_ae = weight_ext_ae << input_e_lo_position;
-assign shift_result_af = weight_ext_af << input_f_lo_position;
-assign shift_result_b0 = weight_ext_b0 << input_0_lo_position;
-assign shift_result_b1 = weight_ext_b1 << input_1_lo_position;
-assign shift_result_b2 = weight_ext_b2 << input_2_lo_position;
-assign shift_result_b3 = weight_ext_b3 << input_3_lo_position;
-assign shift_result_b4 = weight_ext_b4 << input_4_lo_position;
-assign shift_result_b5 = weight_ext_b5 << input_5_lo_position;
-assign shift_result_b6 = weight_ext_b6 << input_6_lo_position;
-assign shift_result_b7 = weight_ext_b7 << input_7_lo_position;
-assign shift_result_b8 = weight_ext_b8 << input_8_lo_position;
-assign shift_result_b9 = weight_ext_b9 << input_9_lo_position;
-assign shift_result_ba = weight_ext_ba << input_a_lo_position;
-assign shift_result_bb = weight_ext_bb << input_b_lo_position;
-assign shift_result_bc = weight_ext_bc << input_c_lo_position;
-assign shift_result_bd = weight_ext_bd << input_d_lo_position;
-assign shift_result_be = weight_ext_be << input_e_lo_position;
-assign shift_result_bf = weight_ext_bf << input_f_lo_position;
-assign shift_result_c0 = weight_ext_c0 << input_0_lo_position;
-assign shift_result_c1 = weight_ext_c1 << input_1_lo_position;
-assign shift_result_c2 = weight_ext_c2 << input_2_lo_position;
-assign shift_result_c3 = weight_ext_c3 << input_3_lo_position;
-assign shift_result_c4 = weight_ext_c4 << input_4_lo_position;
-assign shift_result_c5 = weight_ext_c5 << input_5_lo_position;
-assign shift_result_c6 = weight_ext_c6 << input_6_lo_position;
-assign shift_result_c7 = weight_ext_c7 << input_7_lo_position;
-assign shift_result_c8 = weight_ext_c8 << input_8_lo_position;
-assign shift_result_c9 = weight_ext_c9 << input_9_lo_position;
-assign shift_result_ca = weight_ext_ca << input_a_lo_position;
-assign shift_result_cb = weight_ext_cb << input_b_lo_position;
-assign shift_result_cc = weight_ext_cc << input_c_lo_position;
-assign shift_result_cd = weight_ext_cd << input_d_lo_position;
-assign shift_result_ce = weight_ext_ce << input_e_lo_position;
-assign shift_result_cf = weight_ext_cf << input_f_lo_position;
-assign shift_result_d0 = weight_ext_d0 << input_0_lo_position;
-assign shift_result_d1 = weight_ext_d1 << input_1_lo_position;
-assign shift_result_d2 = weight_ext_d2 << input_2_lo_position;
-assign shift_result_d3 = weight_ext_d3 << input_3_lo_position;
-assign shift_result_d4 = weight_ext_d4 << input_4_lo_position;
-assign shift_result_d5 = weight_ext_d5 << input_5_lo_position;
-assign shift_result_d6 = weight_ext_d6 << input_6_lo_position;
-assign shift_result_d7 = weight_ext_d7 << input_7_lo_position;
-assign shift_result_d8 = weight_ext_d8 << input_8_lo_position;
-assign shift_result_d9 = weight_ext_d9 << input_9_lo_position;
-assign shift_result_da = weight_ext_da << input_a_lo_position;
-assign shift_result_db = weight_ext_db << input_b_lo_position;
-assign shift_result_dc = weight_ext_dc << input_c_lo_position;
-assign shift_result_dd = weight_ext_dd << input_d_lo_position;
-assign shift_result_de = weight_ext_de << input_e_lo_position;
-assign shift_result_df = weight_ext_df << input_f_lo_position;
-assign shift_result_e0 = weight_ext_e0 << input_0_lo_position;
-assign shift_result_e1 = weight_ext_e1 << input_1_lo_position;
-assign shift_result_e2 = weight_ext_e2 << input_2_lo_position;
-assign shift_result_e3 = weight_ext_e3 << input_3_lo_position;
-assign shift_result_e4 = weight_ext_e4 << input_4_lo_position;
-assign shift_result_e5 = weight_ext_e5 << input_5_lo_position;
-assign shift_result_e6 = weight_ext_e6 << input_6_lo_position;
-assign shift_result_e7 = weight_ext_e7 << input_7_lo_position;
-assign shift_result_e8 = weight_ext_e8 << input_8_lo_position;
-assign shift_result_e9 = weight_ext_e9 << input_9_lo_position;
-assign shift_result_ea = weight_ext_ea << input_a_lo_position;
-assign shift_result_eb = weight_ext_eb << input_b_lo_position;
-assign shift_result_ec = weight_ext_ec << input_c_lo_position;
-assign shift_result_ed = weight_ext_ed << input_d_lo_position;
-assign shift_result_ee = weight_ext_ee << input_e_lo_position;
-assign shift_result_ef = weight_ext_ef << input_f_lo_position;
-assign shift_result_f0 = weight_ext_f0 << input_0_lo_position;
-assign shift_result_f1 = weight_ext_f1 << input_1_lo_position;
-assign shift_result_f2 = weight_ext_f2 << input_2_lo_position;
-assign shift_result_f3 = weight_ext_f3 << input_3_lo_position;
-assign shift_result_f4 = weight_ext_f4 << input_4_lo_position;
-assign shift_result_f5 = weight_ext_f5 << input_5_lo_position;
-assign shift_result_f6 = weight_ext_f6 << input_6_lo_position;
-assign shift_result_f7 = weight_ext_f7 << input_7_lo_position;
-assign shift_result_f8 = weight_ext_f8 << input_8_lo_position;
-assign shift_result_f9 = weight_ext_f9 << input_9_lo_position;
-assign shift_result_fa = weight_ext_fa << input_a_lo_position;
-assign shift_result_fb = weight_ext_fb << input_b_lo_position;
-assign shift_result_fc = weight_ext_fc << input_c_lo_position;
-assign shift_result_fd = weight_ext_fd << input_d_lo_position;
-assign shift_result_fe = weight_ext_fe << input_e_lo_position;
-assign shift_result_ff = weight_ext_ff << input_f_lo_position;
+assign shift_result_00 = input_0_zero_flag ? 0 : (weight_ext_00 << input_0_lo_position);
+assign shift_result_01 = input_1_zero_flag ? 0 : (weight_ext_01 << input_1_lo_position);
+assign shift_result_02 = input_2_zero_flag ? 0 : (weight_ext_02 << input_2_lo_position);
+assign shift_result_03 = input_3_zero_flag ? 0 : (weight_ext_03 << input_3_lo_position);
+assign shift_result_04 = input_4_zero_flag ? 0 : (weight_ext_04 << input_4_lo_position);
+assign shift_result_05 = input_5_zero_flag ? 0 : (weight_ext_05 << input_5_lo_position);
+assign shift_result_06 = input_6_zero_flag ? 0 : (weight_ext_06 << input_6_lo_position);
+assign shift_result_07 = input_7_zero_flag ? 0 : (weight_ext_07 << input_7_lo_position);
+assign shift_result_08 = input_8_zero_flag ? 0 : (weight_ext_08 << input_8_lo_position);
+assign shift_result_09 = input_9_zero_flag ? 0 : (weight_ext_09 << input_9_lo_position);
+assign shift_result_0a = input_a_zero_flag ? 0 : (weight_ext_0a << input_a_lo_position);
+assign shift_result_0b = input_b_zero_flag ? 0 : (weight_ext_0b << input_b_lo_position);
+assign shift_result_0c = input_c_zero_flag ? 0 : (weight_ext_0c << input_c_lo_position);
+assign shift_result_0d = input_d_zero_flag ? 0 : (weight_ext_0d << input_d_lo_position);
+assign shift_result_0e = input_e_zero_flag ? 0 : (weight_ext_0e << input_e_lo_position);
+assign shift_result_0f = input_f_zero_flag ? 0 : (weight_ext_0f << input_f_lo_position);
+assign shift_result_10 = input_0_zero_flag ? 0 : (weight_ext_10 << input_0_lo_position);
+assign shift_result_11 = input_1_zero_flag ? 0 : (weight_ext_11 << input_1_lo_position);
+assign shift_result_12 = input_2_zero_flag ? 0 : (weight_ext_12 << input_2_lo_position);
+assign shift_result_13 = input_3_zero_flag ? 0 : (weight_ext_13 << input_3_lo_position);
+assign shift_result_14 = input_4_zero_flag ? 0 : (weight_ext_14 << input_4_lo_position);
+assign shift_result_15 = input_5_zero_flag ? 0 : (weight_ext_15 << input_5_lo_position);
+assign shift_result_16 = input_6_zero_flag ? 0 : (weight_ext_16 << input_6_lo_position);
+assign shift_result_17 = input_7_zero_flag ? 0 : (weight_ext_17 << input_7_lo_position);
+assign shift_result_18 = input_8_zero_flag ? 0 : (weight_ext_18 << input_8_lo_position);
+assign shift_result_19 = input_9_zero_flag ? 0 : (weight_ext_19 << input_9_lo_position);
+assign shift_result_1a = input_a_zero_flag ? 0 : (weight_ext_1a << input_a_lo_position);
+assign shift_result_1b = input_b_zero_flag ? 0 : (weight_ext_1b << input_b_lo_position);
+assign shift_result_1c = input_c_zero_flag ? 0 : (weight_ext_1c << input_c_lo_position);
+assign shift_result_1d = input_d_zero_flag ? 0 : (weight_ext_1d << input_d_lo_position);
+assign shift_result_1e = input_e_zero_flag ? 0 : (weight_ext_1e << input_e_lo_position);
+assign shift_result_1f = input_f_zero_flag ? 0 : (weight_ext_1f << input_f_lo_position);
+assign shift_result_20 = input_0_zero_flag ? 0 : (weight_ext_20 << input_0_lo_position);
+assign shift_result_21 = input_1_zero_flag ? 0 : (weight_ext_21 << input_1_lo_position);
+assign shift_result_22 = input_2_zero_flag ? 0 : (weight_ext_22 << input_2_lo_position);
+assign shift_result_23 = input_3_zero_flag ? 0 : (weight_ext_23 << input_3_lo_position);
+assign shift_result_24 = input_4_zero_flag ? 0 : (weight_ext_24 << input_4_lo_position);
+assign shift_result_25 = input_5_zero_flag ? 0 : (weight_ext_25 << input_5_lo_position);
+assign shift_result_26 = input_6_zero_flag ? 0 : (weight_ext_26 << input_6_lo_position);
+assign shift_result_27 = input_7_zero_flag ? 0 : (weight_ext_27 << input_7_lo_position);
+assign shift_result_28 = input_8_zero_flag ? 0 : (weight_ext_28 << input_8_lo_position);
+assign shift_result_29 = input_9_zero_flag ? 0 : (weight_ext_29 << input_9_lo_position);
+assign shift_result_2a = input_a_zero_flag ? 0 : (weight_ext_2a << input_a_lo_position);
+assign shift_result_2b = input_b_zero_flag ? 0 : (weight_ext_2b << input_b_lo_position);
+assign shift_result_2c = input_c_zero_flag ? 0 : (weight_ext_2c << input_c_lo_position);
+assign shift_result_2d = input_d_zero_flag ? 0 : (weight_ext_2d << input_d_lo_position);
+assign shift_result_2e = input_e_zero_flag ? 0 : (weight_ext_2e << input_e_lo_position);
+assign shift_result_2f = input_f_zero_flag ? 0 : (weight_ext_2f << input_f_lo_position);
+assign shift_result_30 = input_0_zero_flag ? 0 : (weight_ext_30 << input_0_lo_position);
+assign shift_result_31 = input_1_zero_flag ? 0 : (weight_ext_31 << input_1_lo_position);
+assign shift_result_32 = input_2_zero_flag ? 0 : (weight_ext_32 << input_2_lo_position);
+assign shift_result_33 = input_3_zero_flag ? 0 : (weight_ext_33 << input_3_lo_position);
+assign shift_result_34 = input_4_zero_flag ? 0 : (weight_ext_34 << input_4_lo_position);
+assign shift_result_35 = input_5_zero_flag ? 0 : (weight_ext_35 << input_5_lo_position);
+assign shift_result_36 = input_6_zero_flag ? 0 : (weight_ext_36 << input_6_lo_position);
+assign shift_result_37 = input_7_zero_flag ? 0 : (weight_ext_37 << input_7_lo_position);
+assign shift_result_38 = input_8_zero_flag ? 0 : (weight_ext_38 << input_8_lo_position);
+assign shift_result_39 = input_9_zero_flag ? 0 : (weight_ext_39 << input_9_lo_position);
+assign shift_result_3a = input_a_zero_flag ? 0 : (weight_ext_3a << input_a_lo_position);
+assign shift_result_3b = input_b_zero_flag ? 0 : (weight_ext_3b << input_b_lo_position);
+assign shift_result_3c = input_c_zero_flag ? 0 : (weight_ext_3c << input_c_lo_position);
+assign shift_result_3d = input_d_zero_flag ? 0 : (weight_ext_3d << input_d_lo_position);
+assign shift_result_3e = input_e_zero_flag ? 0 : (weight_ext_3e << input_e_lo_position);
+assign shift_result_3f = input_f_zero_flag ? 0 : (weight_ext_3f << input_f_lo_position);
+assign shift_result_40 = input_0_zero_flag ? 0 : (weight_ext_40 << input_0_lo_position);
+assign shift_result_41 = input_1_zero_flag ? 0 : (weight_ext_41 << input_1_lo_position);
+assign shift_result_42 = input_2_zero_flag ? 0 : (weight_ext_42 << input_2_lo_position);
+assign shift_result_43 = input_3_zero_flag ? 0 : (weight_ext_43 << input_3_lo_position);
+assign shift_result_44 = input_4_zero_flag ? 0 : (weight_ext_44 << input_4_lo_position);
+assign shift_result_45 = input_5_zero_flag ? 0 : (weight_ext_45 << input_5_lo_position);
+assign shift_result_46 = input_6_zero_flag ? 0 : (weight_ext_46 << input_6_lo_position);
+assign shift_result_47 = input_7_zero_flag ? 0 : (weight_ext_47 << input_7_lo_position);
+assign shift_result_48 = input_8_zero_flag ? 0 : (weight_ext_48 << input_8_lo_position);
+assign shift_result_49 = input_9_zero_flag ? 0 : (weight_ext_49 << input_9_lo_position);
+assign shift_result_4a = input_a_zero_flag ? 0 : (weight_ext_4a << input_a_lo_position);
+assign shift_result_4b = input_b_zero_flag ? 0 : (weight_ext_4b << input_b_lo_position);
+assign shift_result_4c = input_c_zero_flag ? 0 : (weight_ext_4c << input_c_lo_position);
+assign shift_result_4d = input_d_zero_flag ? 0 : (weight_ext_4d << input_d_lo_position);
+assign shift_result_4e = input_e_zero_flag ? 0 : (weight_ext_4e << input_e_lo_position);
+assign shift_result_4f = input_f_zero_flag ? 0 : (weight_ext_4f << input_f_lo_position);
+assign shift_result_50 = input_0_zero_flag ? 0 : (weight_ext_50 << input_0_lo_position);
+assign shift_result_51 = input_1_zero_flag ? 0 : (weight_ext_51 << input_1_lo_position);
+assign shift_result_52 = input_2_zero_flag ? 0 : (weight_ext_52 << input_2_lo_position);
+assign shift_result_53 = input_3_zero_flag ? 0 : (weight_ext_53 << input_3_lo_position);
+assign shift_result_54 = input_4_zero_flag ? 0 : (weight_ext_54 << input_4_lo_position);
+assign shift_result_55 = input_5_zero_flag ? 0 : (weight_ext_55 << input_5_lo_position);
+assign shift_result_56 = input_6_zero_flag ? 0 : (weight_ext_56 << input_6_lo_position);
+assign shift_result_57 = input_7_zero_flag ? 0 : (weight_ext_57 << input_7_lo_position);
+assign shift_result_58 = input_8_zero_flag ? 0 : (weight_ext_58 << input_8_lo_position);
+assign shift_result_59 = input_9_zero_flag ? 0 : (weight_ext_59 << input_9_lo_position);
+assign shift_result_5a = input_a_zero_flag ? 0 : (weight_ext_5a << input_a_lo_position);
+assign shift_result_5b = input_b_zero_flag ? 0 : (weight_ext_5b << input_b_lo_position);
+assign shift_result_5c = input_c_zero_flag ? 0 : (weight_ext_5c << input_c_lo_position);
+assign shift_result_5d = input_d_zero_flag ? 0 : (weight_ext_5d << input_d_lo_position);
+assign shift_result_5e = input_e_zero_flag ? 0 : (weight_ext_5e << input_e_lo_position);
+assign shift_result_5f = input_f_zero_flag ? 0 : (weight_ext_5f << input_f_lo_position);
+assign shift_result_60 = input_0_zero_flag ? 0 : (weight_ext_60 << input_0_lo_position);
+assign shift_result_61 = input_1_zero_flag ? 0 : (weight_ext_61 << input_1_lo_position);
+assign shift_result_62 = input_2_zero_flag ? 0 : (weight_ext_62 << input_2_lo_position);
+assign shift_result_63 = input_3_zero_flag ? 0 : (weight_ext_63 << input_3_lo_position);
+assign shift_result_64 = input_4_zero_flag ? 0 : (weight_ext_64 << input_4_lo_position);
+assign shift_result_65 = input_5_zero_flag ? 0 : (weight_ext_65 << input_5_lo_position);
+assign shift_result_66 = input_6_zero_flag ? 0 : (weight_ext_66 << input_6_lo_position);
+assign shift_result_67 = input_7_zero_flag ? 0 : (weight_ext_67 << input_7_lo_position);
+assign shift_result_68 = input_8_zero_flag ? 0 : (weight_ext_68 << input_8_lo_position);
+assign shift_result_69 = input_9_zero_flag ? 0 : (weight_ext_69 << input_9_lo_position);
+assign shift_result_6a = input_a_zero_flag ? 0 : (weight_ext_6a << input_a_lo_position);
+assign shift_result_6b = input_b_zero_flag ? 0 : (weight_ext_6b << input_b_lo_position);
+assign shift_result_6c = input_c_zero_flag ? 0 : (weight_ext_6c << input_c_lo_position);
+assign shift_result_6d = input_d_zero_flag ? 0 : (weight_ext_6d << input_d_lo_position);
+assign shift_result_6e = input_e_zero_flag ? 0 : (weight_ext_6e << input_e_lo_position);
+assign shift_result_6f = input_f_zero_flag ? 0 : (weight_ext_6f << input_f_lo_position);
+assign shift_result_70 = input_0_zero_flag ? 0 : (weight_ext_70 << input_0_lo_position);
+assign shift_result_71 = input_1_zero_flag ? 0 : (weight_ext_71 << input_1_lo_position);
+assign shift_result_72 = input_2_zero_flag ? 0 : (weight_ext_72 << input_2_lo_position);
+assign shift_result_73 = input_3_zero_flag ? 0 : (weight_ext_73 << input_3_lo_position);
+assign shift_result_74 = input_4_zero_flag ? 0 : (weight_ext_74 << input_4_lo_position);
+assign shift_result_75 = input_5_zero_flag ? 0 : (weight_ext_75 << input_5_lo_position);
+assign shift_result_76 = input_6_zero_flag ? 0 : (weight_ext_76 << input_6_lo_position);
+assign shift_result_77 = input_7_zero_flag ? 0 : (weight_ext_77 << input_7_lo_position);
+assign shift_result_78 = input_8_zero_flag ? 0 : (weight_ext_78 << input_8_lo_position);
+assign shift_result_79 = input_9_zero_flag ? 0 : (weight_ext_79 << input_9_lo_position);
+assign shift_result_7a = input_a_zero_flag ? 0 : (weight_ext_7a << input_a_lo_position);
+assign shift_result_7b = input_b_zero_flag ? 0 : (weight_ext_7b << input_b_lo_position);
+assign shift_result_7c = input_c_zero_flag ? 0 : (weight_ext_7c << input_c_lo_position);
+assign shift_result_7d = input_d_zero_flag ? 0 : (weight_ext_7d << input_d_lo_position);
+assign shift_result_7e = input_e_zero_flag ? 0 : (weight_ext_7e << input_e_lo_position);
+assign shift_result_7f = input_f_zero_flag ? 0 : (weight_ext_7f << input_f_lo_position);
+assign shift_result_80 = input_0_zero_flag ? 0 : (weight_ext_80 << input_0_lo_position);
+assign shift_result_81 = input_1_zero_flag ? 0 : (weight_ext_81 << input_1_lo_position);
+assign shift_result_82 = input_2_zero_flag ? 0 : (weight_ext_82 << input_2_lo_position);
+assign shift_result_83 = input_3_zero_flag ? 0 : (weight_ext_83 << input_3_lo_position);
+assign shift_result_84 = input_4_zero_flag ? 0 : (weight_ext_84 << input_4_lo_position);
+assign shift_result_85 = input_5_zero_flag ? 0 : (weight_ext_85 << input_5_lo_position);
+assign shift_result_86 = input_6_zero_flag ? 0 : (weight_ext_86 << input_6_lo_position);
+assign shift_result_87 = input_7_zero_flag ? 0 : (weight_ext_87 << input_7_lo_position);
+assign shift_result_88 = input_8_zero_flag ? 0 : (weight_ext_88 << input_8_lo_position);
+assign shift_result_89 = input_9_zero_flag ? 0 : (weight_ext_89 << input_9_lo_position);
+assign shift_result_8a = input_a_zero_flag ? 0 : (weight_ext_8a << input_a_lo_position);
+assign shift_result_8b = input_b_zero_flag ? 0 : (weight_ext_8b << input_b_lo_position);
+assign shift_result_8c = input_c_zero_flag ? 0 : (weight_ext_8c << input_c_lo_position);
+assign shift_result_8d = input_d_zero_flag ? 0 : (weight_ext_8d << input_d_lo_position);
+assign shift_result_8e = input_e_zero_flag ? 0 : (weight_ext_8e << input_e_lo_position);
+assign shift_result_8f = input_f_zero_flag ? 0 : (weight_ext_8f << input_f_lo_position);
+assign shift_result_90 = input_0_zero_flag ? 0 : (weight_ext_90 << input_0_lo_position);
+assign shift_result_91 = input_1_zero_flag ? 0 : (weight_ext_91 << input_1_lo_position);
+assign shift_result_92 = input_2_zero_flag ? 0 : (weight_ext_92 << input_2_lo_position);
+assign shift_result_93 = input_3_zero_flag ? 0 : (weight_ext_93 << input_3_lo_position);
+assign shift_result_94 = input_4_zero_flag ? 0 : (weight_ext_94 << input_4_lo_position);
+assign shift_result_95 = input_5_zero_flag ? 0 : (weight_ext_95 << input_5_lo_position);
+assign shift_result_96 = input_6_zero_flag ? 0 : (weight_ext_96 << input_6_lo_position);
+assign shift_result_97 = input_7_zero_flag ? 0 : (weight_ext_97 << input_7_lo_position);
+assign shift_result_98 = input_8_zero_flag ? 0 : (weight_ext_98 << input_8_lo_position);
+assign shift_result_99 = input_9_zero_flag ? 0 : (weight_ext_99 << input_9_lo_position);
+assign shift_result_9a = input_a_zero_flag ? 0 : (weight_ext_9a << input_a_lo_position);
+assign shift_result_9b = input_b_zero_flag ? 0 : (weight_ext_9b << input_b_lo_position);
+assign shift_result_9c = input_c_zero_flag ? 0 : (weight_ext_9c << input_c_lo_position);
+assign shift_result_9d = input_d_zero_flag ? 0 : (weight_ext_9d << input_d_lo_position);
+assign shift_result_9e = input_e_zero_flag ? 0 : (weight_ext_9e << input_e_lo_position);
+assign shift_result_9f = input_f_zero_flag ? 0 : (weight_ext_9f << input_f_lo_position);
+assign shift_result_a0 = input_0_zero_flag ? 0 : (weight_ext_a0 << input_0_lo_position);
+assign shift_result_a1 = input_1_zero_flag ? 0 : (weight_ext_a1 << input_1_lo_position);
+assign shift_result_a2 = input_2_zero_flag ? 0 : (weight_ext_a2 << input_2_lo_position);
+assign shift_result_a3 = input_3_zero_flag ? 0 : (weight_ext_a3 << input_3_lo_position);
+assign shift_result_a4 = input_4_zero_flag ? 0 : (weight_ext_a4 << input_4_lo_position);
+assign shift_result_a5 = input_5_zero_flag ? 0 : (weight_ext_a5 << input_5_lo_position);
+assign shift_result_a6 = input_6_zero_flag ? 0 : (weight_ext_a6 << input_6_lo_position);
+assign shift_result_a7 = input_7_zero_flag ? 0 : (weight_ext_a7 << input_7_lo_position);
+assign shift_result_a8 = input_8_zero_flag ? 0 : (weight_ext_a8 << input_8_lo_position);
+assign shift_result_a9 = input_9_zero_flag ? 0 : (weight_ext_a9 << input_9_lo_position);
+assign shift_result_aa = input_a_zero_flag ? 0 : (weight_ext_aa << input_a_lo_position);
+assign shift_result_ab = input_b_zero_flag ? 0 : (weight_ext_ab << input_b_lo_position);
+assign shift_result_ac = input_c_zero_flag ? 0 : (weight_ext_ac << input_c_lo_position);
+assign shift_result_ad = input_d_zero_flag ? 0 : (weight_ext_ad << input_d_lo_position);
+assign shift_result_ae = input_e_zero_flag ? 0 : (weight_ext_ae << input_e_lo_position);
+assign shift_result_af = input_f_zero_flag ? 0 : (weight_ext_af << input_f_lo_position);
+assign shift_result_b0 = input_0_zero_flag ? 0 : (weight_ext_b0 << input_0_lo_position);
+assign shift_result_b1 = input_1_zero_flag ? 0 : (weight_ext_b1 << input_1_lo_position);
+assign shift_result_b2 = input_2_zero_flag ? 0 : (weight_ext_b2 << input_2_lo_position);
+assign shift_result_b3 = input_3_zero_flag ? 0 : (weight_ext_b3 << input_3_lo_position);
+assign shift_result_b4 = input_4_zero_flag ? 0 : (weight_ext_b4 << input_4_lo_position);
+assign shift_result_b5 = input_5_zero_flag ? 0 : (weight_ext_b5 << input_5_lo_position);
+assign shift_result_b6 = input_6_zero_flag ? 0 : (weight_ext_b6 << input_6_lo_position);
+assign shift_result_b7 = input_7_zero_flag ? 0 : (weight_ext_b7 << input_7_lo_position);
+assign shift_result_b8 = input_8_zero_flag ? 0 : (weight_ext_b8 << input_8_lo_position);
+assign shift_result_b9 = input_9_zero_flag ? 0 : (weight_ext_b9 << input_9_lo_position);
+assign shift_result_ba = input_a_zero_flag ? 0 : (weight_ext_ba << input_a_lo_position);
+assign shift_result_bb = input_b_zero_flag ? 0 : (weight_ext_bb << input_b_lo_position);
+assign shift_result_bc = input_c_zero_flag ? 0 : (weight_ext_bc << input_c_lo_position);
+assign shift_result_bd = input_d_zero_flag ? 0 : (weight_ext_bd << input_d_lo_position);
+assign shift_result_be = input_e_zero_flag ? 0 : (weight_ext_be << input_e_lo_position);
+assign shift_result_bf = input_f_zero_flag ? 0 : (weight_ext_bf << input_f_lo_position);
+assign shift_result_c0 = input_0_zero_flag ? 0 : (weight_ext_c0 << input_0_lo_position);
+assign shift_result_c1 = input_1_zero_flag ? 0 : (weight_ext_c1 << input_1_lo_position);
+assign shift_result_c2 = input_2_zero_flag ? 0 : (weight_ext_c2 << input_2_lo_position);
+assign shift_result_c3 = input_3_zero_flag ? 0 : (weight_ext_c3 << input_3_lo_position);
+assign shift_result_c4 = input_4_zero_flag ? 0 : (weight_ext_c4 << input_4_lo_position);
+assign shift_result_c5 = input_5_zero_flag ? 0 : (weight_ext_c5 << input_5_lo_position);
+assign shift_result_c6 = input_6_zero_flag ? 0 : (weight_ext_c6 << input_6_lo_position);
+assign shift_result_c7 = input_7_zero_flag ? 0 : (weight_ext_c7 << input_7_lo_position);
+assign shift_result_c8 = input_8_zero_flag ? 0 : (weight_ext_c8 << input_8_lo_position);
+assign shift_result_c9 = input_9_zero_flag ? 0 : (weight_ext_c9 << input_9_lo_position);
+assign shift_result_ca = input_a_zero_flag ? 0 : (weight_ext_ca << input_a_lo_position);
+assign shift_result_cb = input_b_zero_flag ? 0 : (weight_ext_cb << input_b_lo_position);
+assign shift_result_cc = input_c_zero_flag ? 0 : (weight_ext_cc << input_c_lo_position);
+assign shift_result_cd = input_d_zero_flag ? 0 : (weight_ext_cd << input_d_lo_position);
+assign shift_result_ce = input_e_zero_flag ? 0 : (weight_ext_ce << input_e_lo_position);
+assign shift_result_cf = input_f_zero_flag ? 0 : (weight_ext_cf << input_f_lo_position);
+assign shift_result_d0 = input_0_zero_flag ? 0 : (weight_ext_d0 << input_0_lo_position);
+assign shift_result_d1 = input_1_zero_flag ? 0 : (weight_ext_d1 << input_1_lo_position);
+assign shift_result_d2 = input_2_zero_flag ? 0 : (weight_ext_d2 << input_2_lo_position);
+assign shift_result_d3 = input_3_zero_flag ? 0 : (weight_ext_d3 << input_3_lo_position);
+assign shift_result_d4 = input_4_zero_flag ? 0 : (weight_ext_d4 << input_4_lo_position);
+assign shift_result_d5 = input_5_zero_flag ? 0 : (weight_ext_d5 << input_5_lo_position);
+assign shift_result_d6 = input_6_zero_flag ? 0 : (weight_ext_d6 << input_6_lo_position);
+assign shift_result_d7 = input_7_zero_flag ? 0 : (weight_ext_d7 << input_7_lo_position);
+assign shift_result_d8 = input_8_zero_flag ? 0 : (weight_ext_d8 << input_8_lo_position);
+assign shift_result_d9 = input_9_zero_flag ? 0 : (weight_ext_d9 << input_9_lo_position);
+assign shift_result_da = input_a_zero_flag ? 0 : (weight_ext_da << input_a_lo_position);
+assign shift_result_db = input_b_zero_flag ? 0 : (weight_ext_db << input_b_lo_position);
+assign shift_result_dc = input_c_zero_flag ? 0 : (weight_ext_dc << input_c_lo_position);
+assign shift_result_dd = input_d_zero_flag ? 0 : (weight_ext_dd << input_d_lo_position);
+assign shift_result_de = input_e_zero_flag ? 0 : (weight_ext_de << input_e_lo_position);
+assign shift_result_df = input_f_zero_flag ? 0 : (weight_ext_df << input_f_lo_position);
+assign shift_result_e0 = input_0_zero_flag ? 0 : (weight_ext_e0 << input_0_lo_position);
+assign shift_result_e1 = input_1_zero_flag ? 0 : (weight_ext_e1 << input_1_lo_position);
+assign shift_result_e2 = input_2_zero_flag ? 0 : (weight_ext_e2 << input_2_lo_position);
+assign shift_result_e3 = input_3_zero_flag ? 0 : (weight_ext_e3 << input_3_lo_position);
+assign shift_result_e4 = input_4_zero_flag ? 0 : (weight_ext_e4 << input_4_lo_position);
+assign shift_result_e5 = input_5_zero_flag ? 0 : (weight_ext_e5 << input_5_lo_position);
+assign shift_result_e6 = input_6_zero_flag ? 0 : (weight_ext_e6 << input_6_lo_position);
+assign shift_result_e7 = input_7_zero_flag ? 0 : (weight_ext_e7 << input_7_lo_position);
+assign shift_result_e8 = input_8_zero_flag ? 0 : (weight_ext_e8 << input_8_lo_position);
+assign shift_result_e9 = input_9_zero_flag ? 0 : (weight_ext_e9 << input_9_lo_position);
+assign shift_result_ea = input_a_zero_flag ? 0 : (weight_ext_ea << input_a_lo_position);
+assign shift_result_eb = input_b_zero_flag ? 0 : (weight_ext_eb << input_b_lo_position);
+assign shift_result_ec = input_c_zero_flag ? 0 : (weight_ext_ec << input_c_lo_position);
+assign shift_result_ed = input_d_zero_flag ? 0 : (weight_ext_ed << input_d_lo_position);
+assign shift_result_ee = input_e_zero_flag ? 0 : (weight_ext_ee << input_e_lo_position);
+assign shift_result_ef = input_f_zero_flag ? 0 : (weight_ext_ef << input_f_lo_position);
+assign shift_result_f0 = input_0_zero_flag ? 0 : (weight_ext_f0 << input_0_lo_position);
+assign shift_result_f1 = input_1_zero_flag ? 0 : (weight_ext_f1 << input_1_lo_position);
+assign shift_result_f2 = input_2_zero_flag ? 0 : (weight_ext_f2 << input_2_lo_position);
+assign shift_result_f3 = input_3_zero_flag ? 0 : (weight_ext_f3 << input_3_lo_position);
+assign shift_result_f4 = input_4_zero_flag ? 0 : (weight_ext_f4 << input_4_lo_position);
+assign shift_result_f5 = input_5_zero_flag ? 0 : (weight_ext_f5 << input_5_lo_position);
+assign shift_result_f6 = input_6_zero_flag ? 0 : (weight_ext_f6 << input_6_lo_position);
+assign shift_result_f7 = input_7_zero_flag ? 0 : (weight_ext_f7 << input_7_lo_position);
+assign shift_result_f8 = input_8_zero_flag ? 0 : (weight_ext_f8 << input_8_lo_position);
+assign shift_result_f9 = input_9_zero_flag ? 0 : (weight_ext_f9 << input_9_lo_position);
+assign shift_result_fa = input_a_zero_flag ? 0 : (weight_ext_fa << input_a_lo_position);
+assign shift_result_fb = input_b_zero_flag ? 0 : (weight_ext_fb << input_b_lo_position);
+assign shift_result_fc = input_c_zero_flag ? 0 : (weight_ext_fc << input_c_lo_position);
+assign shift_result_fd = input_d_zero_flag ? 0 : (weight_ext_fd << input_d_lo_position);
+assign shift_result_fe = input_e_zero_flag ? 0 : (weight_ext_fe << input_e_lo_position);
+assign shift_result_ff = input_f_zero_flag ? 0 : (weight_ext_ff << input_f_lo_position);
 
 assign add0_result_00 = $signed(shift_result_00) + $signed(shift_result_01);
 assign add0_result_02 = $signed(shift_result_02) + $signed(shift_result_03);
@@ -3692,160 +3693,192 @@ assign add3_result_f0 = $signed(add2_result_f0) + $signed(add2_result_f8);
 
 // assign acc_result_0 = $signed(acc_0) + $signed(add3_result_00);
 always@(posedge clk) begin
-    if ((is_state_done | is_state_idle) & input_valid) begin
+    if (rst)
+        acc_result_0 <= 32'h0000_0000;
+    else if ((is_state_done | is_state_idle) & input_valid) begin
         acc_result_0 <= acc_0;
     end
-    if(add1_valid) begin
+    else if(add1_valid) begin
         acc_result_0 <= $signed(acc_result_0) + $signed(add3_result_00);
     end
 end
 
 // assign acc_result_1 = $signed(acc_1) + $signed(add3_result_10);
 always@(posedge clk) begin
-    if ((is_state_done | is_state_idle) & input_valid) begin
+    if (rst)
+        acc_result_1 <= 32'h0000_0000;
+    else if ((is_state_done | is_state_idle) & input_valid) begin
         acc_result_1 <= acc_1;
     end
-    if(add1_valid) begin
+    else if(add1_valid) begin
         acc_result_1 <= $signed(acc_result_1) + $signed(add3_result_10);
     end
 end
 
 // assign acc_result_2 = $signed(acc_2) + $signed(add3_result_20);
 always@(posedge clk) begin
-    if ((is_state_done | is_state_idle) & input_valid) begin
+    if (rst)
+        acc_result_2 <= 32'h0000_0000;
+    else if ((is_state_done | is_state_idle) & input_valid) begin
         acc_result_2 <= acc_2;
     end
-    if(add1_valid) begin
+    else if(add1_valid) begin
         acc_result_2 <= $signed(acc_result_2) + $signed(add3_result_20);
     end
 end
 
 // assign acc_result_3 = $signed(acc_3) + $signed(add3_result_30);
 always@(posedge clk) begin
-    if ((is_state_done | is_state_idle) & input_valid) begin
+    if (rst)
+        acc_result_3 <= 32'h0000_0000;
+    else if ((is_state_done | is_state_idle) & input_valid) begin
         acc_result_3 <= acc_3;
     end
-    if(add1_valid) begin
+    else if(add1_valid) begin
         acc_result_3 <= $signed(acc_result_3) + $signed(add3_result_30);
     end
 end
 
 // assign acc_result_4 = $signed(acc_4) + $signed(add3_result_40);
 always@(posedge clk) begin
-    if ((is_state_done | is_state_idle) & input_valid) begin
+    if (rst)
+        acc_result_4 <= 32'h0000_0000;
+    else if ((is_state_done | is_state_idle) & input_valid) begin
         acc_result_4 <= acc_4;
     end
-    if(add1_valid) begin
+    else if(add1_valid) begin
         acc_result_4 <= $signed(acc_result_4) + $signed(add3_result_40);
     end
 end
 
 // assign acc_result_5 = $signed(acc_5) + $signed(add3_result_50);
 always@(posedge clk) begin
-    if ((is_state_done | is_state_idle) & input_valid) begin
+    if (rst)
+        acc_result_5 <= 32'h0000_0000;
+    else if ((is_state_done | is_state_idle) & input_valid) begin
         acc_result_5 <= acc_5;
     end
-    if(add1_valid) begin
+    else if(add1_valid) begin
         acc_result_5 <= $signed(acc_result_5) + $signed(add3_result_50);
     end
 end
 
 // assign acc_result_6 = $signed(acc_6) + $signed(add3_result_60);
 always@(posedge clk) begin
-    if ((is_state_done | is_state_idle) & input_valid) begin
+    if (rst)
+        acc_result_6 <= 32'h0000_0000;
+    else if ((is_state_done | is_state_idle) & input_valid) begin
         acc_result_6 <= acc_6;
     end
-    if(add1_valid) begin
+    else if(add1_valid) begin
         acc_result_6 <= $signed(acc_result_6) + $signed(add3_result_60);
     end
 end
 
 // assign acc_result_7 = $signed(acc_7) + $signed(add3_result_70);
 always@(posedge clk) begin
-    if ((is_state_done | is_state_idle) & input_valid) begin
+    if (rst)
+        acc_result_7 <= 32'h0000_0000;
+    else if ((is_state_done | is_state_idle) & input_valid) begin
         acc_result_7 <= acc_7;
     end
-    if(add1_valid) begin
+    else if(add1_valid) begin
         acc_result_7 <= $signed(acc_result_7) + $signed(add3_result_70);
     end
 end
 
 // assign acc_result_8 = $signed(acc_8) + $signed(add3_result_80);
 always@(posedge clk) begin
-    if ((is_state_done | is_state_idle) & input_valid) begin
+    if (rst)
+        acc_result_8 <= 32'h0000_0000;
+    else if ((is_state_done | is_state_idle) & input_valid) begin
         acc_result_8 <= acc_8;
     end
-    if(add1_valid) begin
+    else if(add1_valid) begin
         acc_result_8 <= $signed(acc_result_8) + $signed(add3_result_80);
     end
 end
 
 // assign acc_result_9 = $signed(acc_9) + $signed(add3_result_90);
 always@(posedge clk) begin
-    if ((is_state_done | is_state_idle) & input_valid) begin
+    if (rst)
+        acc_result_9 <= 32'h0000_0000;
+    else if ((is_state_done | is_state_idle) & input_valid) begin
         acc_result_9 <= acc_9;
     end
-    if(add1_valid) begin
+    else if(add1_valid) begin
         acc_result_9 <= $signed(acc_result_9) + $signed(add3_result_90);
     end
 end
 
 // assign acc_result_a = $signed(acc_a) + $signed(add3_result_a0);
 always@(posedge clk) begin
-    if ((is_state_done | is_state_idle) & input_valid) begin
+    if (rst)
+        acc_result_a <= 32'h0000_0000;
+    else if ((is_state_done | is_state_idle) & input_valid) begin
         acc_result_a <= acc_a;
     end
-    if(add1_valid) begin
+    else if(add1_valid) begin
         acc_result_a <= $signed(acc_result_a) + $signed(add3_result_a0);
     end
 end
 
 // assign acc_result_b = $signed(acc_b) + $signed(add3_result_b0);
 always@(posedge clk) begin
-    if ((is_state_done | is_state_idle) & input_valid) begin
+    if (rst)
+        acc_result_b <= 32'h0000_0000;
+    else if ((is_state_done | is_state_idle) & input_valid) begin
         acc_result_b <= acc_b;
     end
-    if(add1_valid) begin
+    else if(add1_valid) begin
         acc_result_b <= $signed(acc_result_b) + $signed(add3_result_b0);
     end
 end
 
 // assign acc_result_c = $signed(acc_c) + $signed(add3_result_c0);
 always@(posedge clk) begin
-    if ((is_state_done | is_state_idle) & input_valid) begin
+    if (rst)
+        acc_result_c <= 32'h0000_0000;
+    else if ((is_state_done | is_state_idle) & input_valid) begin
         acc_result_c <= acc_c;
     end
-    if(add1_valid) begin
+    else if(add1_valid) begin
         acc_result_c <= $signed(acc_result_c) + $signed(add3_result_c0);
     end
 end
 
 // assign acc_result_d = $signed(acc_d) + $signed(add3_result_d0);
 always@(posedge clk) begin
-    if ((is_state_done | is_state_idle) & input_valid) begin
+    if (rst)
+        acc_result_d <= 32'h0000_0000;
+    else if ((is_state_done | is_state_idle) & input_valid) begin
         acc_result_d <= acc_d;
     end
-    if(add1_valid) begin
+    else if(add1_valid) begin
         acc_result_d <= $signed(acc_result_d) + $signed(add3_result_d0);
     end
 end
 
 // assign acc_result_e = $signed(acc_e) + $signed(add3_result_e0);
 always@(posedge clk) begin
-    if ((is_state_done | is_state_idle) & input_valid) begin
+    if (rst)
+        acc_result_e <= 32'h0000_0000;
+    else if ((is_state_done | is_state_idle) & input_valid) begin
         acc_result_e <= acc_e;
     end
-    if(add1_valid) begin
+    else if(add1_valid) begin
         acc_result_e <= $signed(acc_result_e) + $signed(add3_result_e0);
     end
 end
 
 // assign acc_result_f = $signed(acc_f) + $signed(add3_result_f0);
 always@(posedge clk) begin
-    if ((is_state_done | is_state_idle) & input_valid) begin
+    if (rst)
+        acc_result_f <= 32'h0000_0000;
+    else if ((is_state_done | is_state_idle) & input_valid) begin
         acc_result_f <= acc_f;
     end
-    if(add1_valid) begin
+    else if(add1_valid) begin
         acc_result_f <= $signed(acc_result_f) + $signed(add3_result_f0);
     end
 end
@@ -3907,661 +3940,3 @@ assign output_valid = out_valid;
 assign state_done   = all_zeros;
 
 endmodule
-
-
-// wire output_valid;
-// wire output_done;
-
-// gemm_core grp_gemm_core_fu_1331(
-//     .ap_clk(ap_clk),
-//     .ap_rst(ap_rst_n_inv),
-//     .i_0(i_tensor_0_0_V_reg_11031),
-//     .i_1(i_tensor_0_1_V_reg_11036),
-//     .i_2(i_tensor_0_2_V_reg_11041),
-//     .i_3(i_tensor_0_3_V_reg_11046),
-//     .i_4(i_tensor_0_4_V_reg_11051),
-//     .i_5(i_tensor_0_5_V_reg_11056),
-//     .i_6(i_tensor_0_6_V_reg_11061),
-//     .i_7(i_tensor_0_7_V_reg_11066),
-//     .i_8(i_tensor_0_8_V_reg_11071),
-//     .i_9(i_tensor_0_9_V_reg_11076),
-//     .i_a(i_tensor_0_10_V_reg_11081),
-//     .i_b(i_tensor_0_11_V_reg_11086),
-//     .i_c(i_tensor_0_12_V_reg_11091),
-//     .i_d(i_tensor_0_13_V_reg_11096),
-//     .i_e(i_tensor_0_14_V_reg_11101),
-//     .i_f(i_tensor_0_15_V_reg_11106),
-//     .w_00(w_tensor_0_0_V_reg_9751),
-//     .w_01(w_tensor_0_1_V_reg_9756),
-//     .w_02(w_tensor_0_2_V_reg_9761),
-//     .w_03(w_tensor_0_3_V_reg_9766),
-//     .w_04(w_tensor_0_4_V_reg_9771),
-//     .w_05(w_tensor_0_5_V_reg_9776),
-//     .w_06(w_tensor_0_6_V_reg_9781),
-//     .w_07(w_tensor_0_7_V_reg_9786),
-//     .w_08(w_tensor_0_8_V_reg_9791),
-//     .w_09(w_tensor_0_9_V_reg_9796),
-//     .w_0a(w_tensor_0_10_V_reg_9801),
-//     .w_0b(w_tensor_0_11_V_reg_9806),
-//     .w_0c(w_tensor_0_12_V_reg_9811),
-//     .w_0d(w_tensor_0_13_V_reg_9816),
-//     .w_0e(w_tensor_0_14_V_reg_9821),
-//     .w_0f(w_tensor_0_15_V_reg_9826),
-//     .w_10(w_tensor_1_0_V_reg_9831),
-//     .w_11(w_tensor_1_1_V_reg_9836),
-//     .w_12(w_tensor_1_2_V_reg_9841),
-//     .w_13(w_tensor_1_3_V_reg_9846),
-//     .w_14(w_tensor_1_4_V_reg_9851),
-//     .w_15(w_tensor_1_5_V_reg_9856),
-//     .w_16(w_tensor_1_6_V_reg_9861),
-//     .w_17(w_tensor_1_7_V_reg_9866),
-//     .w_18(w_tensor_1_8_V_reg_9871),
-//     .w_19(w_tensor_1_9_V_reg_9876),
-//     .w_1a(w_tensor_1_10_V_reg_9881),
-//     .w_1b(w_tensor_1_11_V_reg_9886),
-//     .w_1c(w_tensor_1_12_V_reg_9891),
-//     .w_1d(w_tensor_1_13_V_reg_9896),
-//     .w_1e(w_tensor_1_14_V_reg_9901),
-//     .w_1f(w_tensor_1_15_V_reg_9906),
-//     .w_20(w_tensor_2_0_V_reg_9911),
-//     .w_21(w_tensor_2_1_V_reg_9916),
-//     .w_22(w_tensor_2_2_V_reg_9921),
-//     .w_23(w_tensor_2_3_V_reg_9926),
-//     .w_24(w_tensor_2_4_V_reg_9931),
-//     .w_25(w_tensor_2_5_V_reg_9936),
-//     .w_26(w_tensor_2_6_V_reg_9941),
-//     .w_27(w_tensor_2_7_V_reg_9946),
-//     .w_28(w_tensor_2_8_V_reg_9951),
-//     .w_29(w_tensor_2_9_V_reg_9956),
-//     .w_2a(w_tensor_2_10_V_reg_9961),
-//     .w_2b(w_tensor_2_11_V_reg_9966),
-//     .w_2c(w_tensor_2_12_V_reg_9971),
-//     .w_2d(w_tensor_2_13_V_reg_9976),
-//     .w_2e(w_tensor_2_14_V_reg_9981),
-//     .w_2f(w_tensor_2_15_V_reg_9986),
-//     .w_30(w_tensor_3_0_V_reg_9991),
-//     .w_31(w_tensor_3_1_V_reg_9996),
-//     .w_32(w_tensor_3_2_V_reg_10001),
-//     .w_33(w_tensor_3_3_V_reg_10006),
-//     .w_34(w_tensor_3_4_V_reg_10011),
-//     .w_35(w_tensor_3_5_V_reg_10016),
-//     .w_36(w_tensor_3_6_V_reg_10021),
-//     .w_37(w_tensor_3_7_V_reg_10026),
-//     .w_38(w_tensor_3_8_V_reg_10031),
-//     .w_39(w_tensor_3_9_V_reg_10036),
-//     .w_3a(w_tensor_3_10_V_reg_10041),
-//     .w_3b(w_tensor_3_11_V_reg_10046),
-//     .w_3c(w_tensor_3_12_V_reg_10051),
-//     .w_3d(w_tensor_3_13_V_reg_10056),
-//     .w_3e(w_tensor_3_14_V_reg_10061),
-//     .w_3f(w_tensor_3_15_V_reg_10066),
-//     .w_40(w_tensor_4_0_V_reg_10071),
-//     .w_41(w_tensor_4_1_V_reg_10076),
-//     .w_42(w_tensor_4_2_V_reg_10081),
-//     .w_43(w_tensor_4_3_V_reg_10086),
-//     .w_44(w_tensor_4_4_V_reg_10091),
-//     .w_45(w_tensor_4_5_V_reg_10096),
-//     .w_46(w_tensor_4_6_V_reg_10101),
-//     .w_47(w_tensor_4_7_V_reg_10106),
-//     .w_48(w_tensor_4_8_V_reg_10111),
-//     .w_49(w_tensor_4_9_V_reg_10116),
-//     .w_4a(w_tensor_4_10_V_reg_10121),
-//     .w_4b(w_tensor_4_11_V_reg_10126),
-//     .w_4c(w_tensor_4_12_V_reg_10131),
-//     .w_4d(w_tensor_4_13_V_reg_10136),
-//     .w_4e(w_tensor_4_14_V_reg_10141),
-//     .w_4f(w_tensor_4_15_V_reg_10146),
-//     .w_50(w_tensor_5_0_V_reg_10151),
-//     .w_51(w_tensor_5_1_V_reg_10156),
-//     .w_52(w_tensor_5_2_V_reg_10161),
-//     .w_53(w_tensor_5_3_V_reg_10166),
-//     .w_54(w_tensor_5_4_V_reg_10171),
-//     .w_55(w_tensor_5_5_V_reg_10176),
-//     .w_56(w_tensor_5_6_V_reg_10181),
-//     .w_57(w_tensor_5_7_V_reg_10186),
-//     .w_58(w_tensor_5_8_V_reg_10191),
-//     .w_59(w_tensor_5_9_V_reg_10196),
-//     .w_5a(w_tensor_5_10_V_reg_10201),
-//     .w_5b(w_tensor_5_11_V_reg_10206),
-//     .w_5c(w_tensor_5_12_V_reg_10211),
-//     .w_5d(w_tensor_5_13_V_reg_10216),
-//     .w_5e(w_tensor_5_14_V_reg_10221),
-//     .w_5f(w_tensor_5_15_V_reg_10226),
-//     .w_60(w_tensor_6_0_V_reg_10231),
-//     .w_61(w_tensor_6_1_V_reg_10236),
-//     .w_62(w_tensor_6_2_V_reg_10241),
-//     .w_63(w_tensor_6_3_V_reg_10246),
-//     .w_64(w_tensor_6_4_V_reg_10251),
-//     .w_65(w_tensor_6_5_V_reg_10256),
-//     .w_66(w_tensor_6_6_V_reg_10261),
-//     .w_67(w_tensor_6_7_V_reg_10266),
-//     .w_68(w_tensor_6_8_V_reg_10271),
-//     .w_69(w_tensor_6_9_V_reg_10276),
-//     .w_6a(w_tensor_6_10_V_reg_10281),
-//     .w_6b(w_tensor_6_11_V_reg_10286),
-//     .w_6c(w_tensor_6_12_V_reg_10291),
-//     .w_6d(w_tensor_6_13_V_reg_10296),
-//     .w_6e(w_tensor_6_14_V_reg_10301),
-//     .w_6f(w_tensor_6_15_V_reg_10306),
-//     .w_70(w_tensor_7_0_V_reg_10311),
-//     .w_71(w_tensor_7_1_V_reg_10316),
-//     .w_72(w_tensor_7_2_V_reg_10321),
-//     .w_73(w_tensor_7_3_V_reg_10326),
-//     .w_74(w_tensor_7_4_V_reg_10331),
-//     .w_75(w_tensor_7_5_V_reg_10336),
-//     .w_76(w_tensor_7_6_V_reg_10341),
-//     .w_77(w_tensor_7_7_V_reg_10346),
-//     .w_78(w_tensor_7_8_V_reg_10351),
-//     .w_79(w_tensor_7_9_V_reg_10356),
-//     .w_7a(w_tensor_7_10_V_reg_10361),
-//     .w_7b(w_tensor_7_11_V_reg_10366),
-//     .w_7c(w_tensor_7_12_V_reg_10371),
-//     .w_7d(w_tensor_7_13_V_reg_10376),
-//     .w_7e(w_tensor_7_14_V_reg_10381),
-//     .w_7f(w_tensor_7_15_V_reg_10386),
-//     .w_80(w_tensor_8_0_V_reg_10391),
-//     .w_81(w_tensor_8_1_V_reg_10396),
-//     .w_82(w_tensor_8_2_V_reg_10401),
-//     .w_83(w_tensor_8_3_V_reg_10406),
-//     .w_84(w_tensor_8_4_V_reg_10411),
-//     .w_85(w_tensor_8_5_V_reg_10416),
-//     .w_86(w_tensor_8_6_V_reg_10421),
-//     .w_87(w_tensor_8_7_V_reg_10426),
-//     .w_88(w_tensor_8_8_V_reg_10431),
-//     .w_89(w_tensor_8_9_V_reg_10436),
-//     .w_8a(w_tensor_8_10_V_reg_10441),
-//     .w_8b(w_tensor_8_11_V_reg_10446),
-//     .w_8c(w_tensor_8_12_V_reg_10451),
-//     .w_8d(w_tensor_8_13_V_reg_10456),
-//     .w_8e(w_tensor_8_14_V_reg_10461),
-//     .w_8f(w_tensor_8_15_V_reg_10466),
-//     .w_90(w_tensor_9_0_V_reg_10471),
-//     .w_91(w_tensor_9_1_V_reg_10476),
-//     .w_92(w_tensor_9_2_V_reg_10481),
-//     .w_93(w_tensor_9_3_V_reg_10486),
-//     .w_94(w_tensor_9_4_V_reg_10491),
-//     .w_95(w_tensor_9_5_V_reg_10496),
-//     .w_96(w_tensor_9_6_V_reg_10501),
-//     .w_97(w_tensor_9_7_V_reg_10506),
-//     .w_98(w_tensor_9_8_V_reg_10511),
-//     .w_99(w_tensor_9_9_V_reg_10516),
-//     .w_9a(w_tensor_9_10_V_reg_10521),
-//     .w_9b(w_tensor_9_11_V_reg_10526),
-//     .w_9c(w_tensor_9_12_V_reg_10531),
-//     .w_9d(w_tensor_9_13_V_reg_10536),
-//     .w_9e(w_tensor_9_14_V_reg_10541),
-//     .w_9f(w_tensor_9_15_V_reg_10546),
-//     .w_a0(w_tensor_10_0_V_reg_10551),
-//     .w_a1(w_tensor_10_1_V_reg_10556),
-//     .w_a2(w_tensor_10_2_V_reg_10561),
-//     .w_a3(w_tensor_10_3_V_reg_10566),
-//     .w_a4(w_tensor_10_4_V_reg_10571),
-//     .w_a5(w_tensor_10_5_V_reg_10576),
-//     .w_a6(w_tensor_10_6_V_reg_10581),
-//     .w_a7(w_tensor_10_7_V_reg_10586),
-//     .w_a8(w_tensor_10_8_V_reg_10591),
-//     .w_a9(w_tensor_10_9_V_reg_10596),
-//     .w_aa(w_tensor_10_10_V_reg_10601),
-//     .w_ab(w_tensor_10_11_V_reg_10606),
-//     .w_ac(w_tensor_10_12_V_reg_10611),
-//     .w_ad(w_tensor_10_13_V_reg_10616),
-//     .w_ae(w_tensor_10_14_V_reg_10621),
-//     .w_af(w_tensor_10_15_V_reg_10626),
-//     .w_b0(w_tensor_11_0_V_reg_10631),
-//     .w_b1(w_tensor_11_1_V_reg_10636),
-//     .w_b2(w_tensor_11_2_V_reg_10641),
-//     .w_b3(w_tensor_11_3_V_reg_10646),
-//     .w_b4(w_tensor_11_4_V_reg_10651),
-//     .w_b5(w_tensor_11_5_V_reg_10656),
-//     .w_b6(w_tensor_11_6_V_reg_10661),
-//     .w_b7(w_tensor_11_7_V_reg_10666),
-//     .w_b8(w_tensor_11_8_V_reg_10671),
-//     .w_b9(w_tensor_11_9_V_reg_10676),
-//     .w_ba(w_tensor_11_10_V_reg_10681),
-//     .w_bb(w_tensor_11_11_V_reg_10686),
-//     .w_bc(w_tensor_11_12_V_reg_10691),
-//     .w_bd(w_tensor_11_13_V_reg_10696),
-//     .w_be(w_tensor_11_14_V_reg_10701),
-//     .w_bf(w_tensor_11_15_V_reg_10706),
-//     .w_c0(w_tensor_12_0_V_reg_10711),
-//     .w_c1(w_tensor_12_1_V_reg_10716),
-//     .w_c2(w_tensor_12_2_V_reg_10721),
-//     .w_c3(w_tensor_12_3_V_reg_10726),
-//     .w_c4(w_tensor_12_4_V_reg_10731),
-//     .w_c5(w_tensor_12_5_V_reg_10736),
-//     .w_c6(w_tensor_12_6_V_reg_10741),
-//     .w_c7(w_tensor_12_7_V_reg_10746),
-//     .w_c8(w_tensor_12_8_V_reg_10751),
-//     .w_c9(w_tensor_12_9_V_reg_10756),
-//     .w_ca(w_tensor_12_10_V_reg_10761),
-//     .w_cb(w_tensor_12_11_V_reg_10766),
-//     .w_cc(w_tensor_12_12_V_reg_10771),
-//     .w_cd(w_tensor_12_13_V_reg_10776),
-//     .w_ce(w_tensor_12_14_V_reg_10781),
-//     .w_cf(w_tensor_12_15_V_reg_10786),
-//     .w_d0(w_tensor_13_0_V_reg_10791),
-//     .w_d1(w_tensor_13_1_V_reg_10796),
-//     .w_d2(w_tensor_13_2_V_reg_10801),
-//     .w_d3(w_tensor_13_3_V_reg_10806),
-//     .w_d4(w_tensor_13_4_V_reg_10811),
-//     .w_d5(w_tensor_13_5_V_reg_10816),
-//     .w_d6(w_tensor_13_6_V_reg_10821),
-//     .w_d7(w_tensor_13_7_V_reg_10826),
-//     .w_d8(w_tensor_13_8_V_reg_10831),
-//     .w_d9(w_tensor_13_9_V_reg_10836),
-//     .w_da(w_tensor_13_10_V_reg_10841),
-//     .w_db(w_tensor_13_11_V_reg_10846),
-//     .w_dc(w_tensor_13_12_V_reg_10851),
-//     .w_dd(w_tensor_13_13_V_reg_10856),
-//     .w_de(w_tensor_13_14_V_reg_10861),
-//     .w_df(w_tensor_13_15_V_reg_10866),
-//     .w_e0(w_tensor_14_0_V_reg_10871),
-//     .w_e1(w_tensor_14_1_V_reg_10876),
-//     .w_e2(w_tensor_14_2_V_reg_10881),
-//     .w_e3(w_tensor_14_3_V_reg_10886),
-//     .w_e4(w_tensor_14_4_V_reg_10891),
-//     .w_e5(w_tensor_14_5_V_reg_10896),
-//     .w_e6(w_tensor_14_6_V_reg_10901),
-//     .w_e7(w_tensor_14_7_V_reg_10906),
-//     .w_e8(w_tensor_14_8_V_reg_10911),
-//     .w_e9(w_tensor_14_9_V_reg_10916),
-//     .w_ea(w_tensor_14_10_V_reg_10921),
-//     .w_eb(w_tensor_14_11_V_reg_10926),
-//     .w_ec(w_tensor_14_12_V_reg_10931),
-//     .w_ed(w_tensor_14_13_V_reg_10936),
-//     .w_ee(w_tensor_14_14_V_reg_10941),
-//     .w_ef(w_tensor_14_15_V_reg_10946),
-//     .w_f0(w_tensor_15_0_V_reg_10951),
-//     .w_f1(w_tensor_15_1_V_reg_10956),
-//     .w_f2(w_tensor_15_2_V_reg_10961),
-//     .w_f3(w_tensor_15_3_V_reg_10966),
-//     .w_f4(w_tensor_15_4_V_reg_10971),
-//     .w_f5(w_tensor_15_5_V_reg_10976),
-//     .w_f6(w_tensor_15_6_V_reg_10981),
-//     .w_f7(w_tensor_15_7_V_reg_10986),
-//     .w_f8(w_tensor_15_8_V_reg_10991),
-//     .w_f9(w_tensor_15_9_V_reg_10996),
-//     .w_fa(w_tensor_15_10_V_reg_11001),
-//     .w_fb(w_tensor_15_11_V_reg_11006),
-//     .w_fc(w_tensor_15_12_V_reg_11011),
-//     .w_fd(w_tensor_15_13_V_reg_11016),
-//     .w_fe(w_tensor_15_14_V_reg_11021),
-//     .w_ff(w_tensor_15_15_V_reg_11026),
-//     .a_0(a_tensor_0_0_V_reg_11111),
-//     .a_1(reg_1875),
-//     .a_2(reg_1880),
-//     .a_3(reg_1885),
-//     .a_4(reg_1890),
-//     .a_5(reg_1895),
-//     .a_6(reg_1900),
-//     .a_7(reg_1905),
-//     .a_8(reg_1910),
-//     .a_9(reg_1915),
-//     .a_a(reg_1920),
-//     .a_b(reg_1925),
-//     .a_c(reg_1930),
-//     .a_d(reg_1935),
-//     .a_e(reg_1940),
-//     .a_f(reg_1945),
-//     .gemm_reset(grp_gemm_core_fu_1331_gemm_reset),
-//     .a_out_0(grp_gemm_core_fu_1331_ap_return_0),
-//     .a_out_1(grp_gemm_core_fu_1331_ap_return_1),
-//     .a_out_2(grp_gemm_core_fu_1331_ap_return_2),
-//     .a_out_3(grp_gemm_core_fu_1331_ap_return_3),
-//     .a_out_4(grp_gemm_core_fu_1331_ap_return_4),
-//     .a_out_5(grp_gemm_core_fu_1331_ap_return_5),
-//     .a_out_6(grp_gemm_core_fu_1331_ap_return_6),
-//     .a_out_7(grp_gemm_core_fu_1331_ap_return_7),
-//     .a_out_8(grp_gemm_core_fu_1331_ap_return_8),
-//     .a_out_9(grp_gemm_core_fu_1331_ap_return_9),
-//     .a_out_a(grp_gemm_core_fu_1331_ap_return_10),
-//     .a_out_b(grp_gemm_core_fu_1331_ap_return_11),
-//     .a_out_c(grp_gemm_core_fu_1331_ap_return_12),
-//     .a_out_d(grp_gemm_core_fu_1331_ap_return_13),
-//     .a_out_e(grp_gemm_core_fu_1331_ap_return_14),
-//     .a_out_f(grp_gemm_core_fu_1331_ap_return_15),
-//     .o_0(grp_gemm_core_fu_1331_ap_return_16),
-//     .o_1(grp_gemm_core_fu_1331_ap_return_17),
-//     .o_2(grp_gemm_core_fu_1331_ap_return_18),
-//     .o_3(grp_gemm_core_fu_1331_ap_return_19),
-//     .o_4(grp_gemm_core_fu_1331_ap_return_20),
-//     .o_5(grp_gemm_core_fu_1331_ap_return_21),
-//     .o_6(grp_gemm_core_fu_1331_ap_return_22),
-//     .o_7(grp_gemm_core_fu_1331_ap_return_23),
-//     .o_8(grp_gemm_core_fu_1331_ap_return_24),
-//     .o_9(grp_gemm_core_fu_1331_ap_return_25),
-//     .o_a(grp_gemm_core_fu_1331_ap_return_26),
-//     .o_b(grp_gemm_core_fu_1331_ap_return_27),
-//     .o_c(grp_gemm_core_fu_1331_ap_return_28),
-//     .o_d(grp_gemm_core_fu_1331_ap_return_29),
-//     .o_e(grp_gemm_core_fu_1331_ap_return_30),
-//     .o_f(grp_gemm_core_fu_1331_ap_return_31),
-//     .in_valid(1),
-//     .output_valid(output_valid),
-//     .state_done(output_done));
-
-// gemm_core grp_gemm_core_fu_1331(
-//     .ap_clk(ap_clk),
-//     .ap_rst(ap_rst_n_inv),
-//     .i_tensor_0_0_V_rea(i_tensor_0_0_V_reg_11031),
-//     .i_tensor_0_1_V_rea(i_tensor_0_1_V_reg_11036),
-//     .i_tensor_0_2_V_rea(i_tensor_0_2_V_reg_11041),
-//     .i_tensor_0_3_V_rea(i_tensor_0_3_V_reg_11046),
-//     .i_tensor_0_4_V_rea(i_tensor_0_4_V_reg_11051),
-//     .i_tensor_0_5_V_rea(i_tensor_0_5_V_reg_11056),
-//     .i_tensor_0_6_V_rea(i_tensor_0_6_V_reg_11061),
-//     .i_tensor_0_7_V_rea(i_tensor_0_7_V_reg_11066),
-//     .i_tensor_0_8_V_rea(i_tensor_0_8_V_reg_11071),
-//     .i_tensor_0_9_V_rea(i_tensor_0_9_V_reg_11076),
-//     .i_tensor_0_10_V_re(i_tensor_0_10_V_reg_11081),
-//     .i_tensor_0_11_V_re(i_tensor_0_11_V_reg_11086),
-//     .i_tensor_0_12_V_re(i_tensor_0_12_V_reg_11091),
-//     .i_tensor_0_13_V_re(i_tensor_0_13_V_reg_11096),
-//     .i_tensor_0_14_V_re(i_tensor_0_14_V_reg_11101),
-//     .i_tensor_0_15_V_re(i_tensor_0_15_V_reg_11106),
-//     .w_tensor_0_0_V_rea(w_tensor_0_0_V_reg_9751),
-//     .w_tensor_0_1_V_rea(w_tensor_0_1_V_reg_9756),
-//     .w_tensor_0_2_V_rea(w_tensor_0_2_V_reg_9761),
-//     .w_tensor_0_3_V_rea(w_tensor_0_3_V_reg_9766),
-//     .w_tensor_0_4_V_rea(w_tensor_0_4_V_reg_9771),
-//     .w_tensor_0_5_V_rea(w_tensor_0_5_V_reg_9776),
-//     .w_tensor_0_6_V_rea(w_tensor_0_6_V_reg_9781),
-//     .w_tensor_0_7_V_rea(w_tensor_0_7_V_reg_9786),
-//     .w_tensor_0_8_V_rea(w_tensor_0_8_V_reg_9791),
-//     .w_tensor_0_9_V_rea(w_tensor_0_9_V_reg_9796),
-//     .w_tensor_0_10_V_re(w_tensor_0_10_V_reg_9801),
-//     .w_tensor_0_11_V_re(w_tensor_0_11_V_reg_9806),
-//     .w_tensor_0_12_V_re(w_tensor_0_12_V_reg_9811),
-//     .w_tensor_0_13_V_re(w_tensor_0_13_V_reg_9816),
-//     .w_tensor_0_14_V_re(w_tensor_0_14_V_reg_9821),
-//     .w_tensor_0_15_V_re(w_tensor_0_15_V_reg_9826),
-//     .w_tensor_1_0_V_rea(w_tensor_1_0_V_reg_9831),
-//     .w_tensor_1_1_V_rea(w_tensor_1_1_V_reg_9836),
-//     .w_tensor_1_2_V_rea(w_tensor_1_2_V_reg_9841),
-//     .w_tensor_1_3_V_rea(w_tensor_1_3_V_reg_9846),
-//     .w_tensor_1_4_V_rea(w_tensor_1_4_V_reg_9851),
-//     .w_tensor_1_5_V_rea(w_tensor_1_5_V_reg_9856),
-//     .w_tensor_1_6_V_rea(w_tensor_1_6_V_reg_9861),
-//     .w_tensor_1_7_V_rea(w_tensor_1_7_V_reg_9866),
-//     .w_tensor_1_8_V_rea(w_tensor_1_8_V_reg_9871),
-//     .w_tensor_1_9_V_rea(w_tensor_1_9_V_reg_9876),
-//     .w_tensor_1_10_V_re(w_tensor_1_10_V_reg_9881),
-//     .w_tensor_1_11_V_re(w_tensor_1_11_V_reg_9886),
-//     .w_tensor_1_12_V_re(w_tensor_1_12_V_reg_9891),
-//     .w_tensor_1_13_V_re(w_tensor_1_13_V_reg_9896),
-//     .w_tensor_1_14_V_re(w_tensor_1_14_V_reg_9901),
-//     .w_tensor_1_15_V_re(w_tensor_1_15_V_reg_9906),
-//     .w_tensor_2_0_V_rea(w_tensor_2_0_V_reg_9911),
-//     .w_tensor_2_1_V_rea(w_tensor_2_1_V_reg_9916),
-//     .w_tensor_2_2_V_rea(w_tensor_2_2_V_reg_9921),
-//     .w_tensor_2_3_V_rea(w_tensor_2_3_V_reg_9926),
-//     .w_tensor_2_4_V_rea(w_tensor_2_4_V_reg_9931),
-//     .w_tensor_2_5_V_rea(w_tensor_2_5_V_reg_9936),
-//     .w_tensor_2_6_V_rea(w_tensor_2_6_V_reg_9941),
-//     .w_tensor_2_7_V_rea(w_tensor_2_7_V_reg_9946),
-//     .w_tensor_2_8_V_rea(w_tensor_2_8_V_reg_9951),
-//     .w_tensor_2_9_V_rea(w_tensor_2_9_V_reg_9956),
-//     .w_tensor_2_10_V_re(w_tensor_2_10_V_reg_9961),
-//     .w_tensor_2_11_V_re(w_tensor_2_11_V_reg_9966),
-//     .w_tensor_2_12_V_re(w_tensor_2_12_V_reg_9971),
-//     .w_tensor_2_13_V_re(w_tensor_2_13_V_reg_9976),
-//     .w_tensor_2_14_V_re(w_tensor_2_14_V_reg_9981),
-//     .w_tensor_2_15_V_re(w_tensor_2_15_V_reg_9986),
-//     .w_tensor_3_0_V_rea(w_tensor_3_0_V_reg_9991),
-//     .w_tensor_3_1_V_rea(w_tensor_3_1_V_reg_9996),
-//     .w_tensor_3_2_V_rea(w_tensor_3_2_V_reg_10001),
-//     .w_tensor_3_3_V_rea(w_tensor_3_3_V_reg_10006),
-//     .w_tensor_3_4_V_rea(w_tensor_3_4_V_reg_10011),
-//     .w_tensor_3_5_V_rea(w_tensor_3_5_V_reg_10016),
-//     .w_tensor_3_6_V_rea(w_tensor_3_6_V_reg_10021),
-//     .w_tensor_3_7_V_rea(w_tensor_3_7_V_reg_10026),
-//     .w_tensor_3_8_V_rea(w_tensor_3_8_V_reg_10031),
-//     .w_tensor_3_9_V_rea(w_tensor_3_9_V_reg_10036),
-//     .w_tensor_3_10_V_re(w_tensor_3_10_V_reg_10041),
-//     .w_tensor_3_11_V_re(w_tensor_3_11_V_reg_10046),
-//     .w_tensor_3_12_V_re(w_tensor_3_12_V_reg_10051),
-//     .w_tensor_3_13_V_re(w_tensor_3_13_V_reg_10056),
-//     .w_tensor_3_14_V_re(w_tensor_3_14_V_reg_10061),
-//     .w_tensor_3_15_V_re(w_tensor_3_15_V_reg_10066),
-//     .w_tensor_4_0_V_rea(w_tensor_4_0_V_reg_10071),
-//     .w_tensor_4_1_V_rea(w_tensor_4_1_V_reg_10076),
-//     .w_tensor_4_2_V_rea(w_tensor_4_2_V_reg_10081),
-//     .w_tensor_4_3_V_rea(w_tensor_4_3_V_reg_10086),
-//     .w_tensor_4_4_V_rea(w_tensor_4_4_V_reg_10091),
-//     .w_tensor_4_5_V_rea(w_tensor_4_5_V_reg_10096),
-//     .w_tensor_4_6_V_rea(w_tensor_4_6_V_reg_10101),
-//     .w_tensor_4_7_V_rea(w_tensor_4_7_V_reg_10106),
-//     .w_tensor_4_8_V_rea(w_tensor_4_8_V_reg_10111),
-//     .w_tensor_4_9_V_rea(w_tensor_4_9_V_reg_10116),
-//     .w_tensor_4_10_V_re(w_tensor_4_10_V_reg_10121),
-//     .w_tensor_4_11_V_re(w_tensor_4_11_V_reg_10126),
-//     .w_tensor_4_12_V_re(w_tensor_4_12_V_reg_10131),
-//     .w_tensor_4_13_V_re(w_tensor_4_13_V_reg_10136),
-//     .w_tensor_4_14_V_re(w_tensor_4_14_V_reg_10141),
-//     .w_tensor_4_15_V_re(w_tensor_4_15_V_reg_10146),
-//     .w_tensor_5_0_V_rea(w_tensor_5_0_V_reg_10151),
-//     .w_tensor_5_1_V_rea(w_tensor_5_1_V_reg_10156),
-//     .w_tensor_5_2_V_rea(w_tensor_5_2_V_reg_10161),
-//     .w_tensor_5_3_V_rea(w_tensor_5_3_V_reg_10166),
-//     .w_tensor_5_4_V_rea(w_tensor_5_4_V_reg_10171),
-//     .w_tensor_5_5_V_rea(w_tensor_5_5_V_reg_10176),
-//     .w_tensor_5_6_V_rea(w_tensor_5_6_V_reg_10181),
-//     .w_tensor_5_7_V_rea(w_tensor_5_7_V_reg_10186),
-//     .w_tensor_5_8_V_rea(w_tensor_5_8_V_reg_10191),
-//     .w_tensor_5_9_V_rea(w_tensor_5_9_V_reg_10196),
-//     .w_tensor_5_10_V_re(w_tensor_5_10_V_reg_10201),
-//     .w_tensor_5_11_V_re(w_tensor_5_11_V_reg_10206),
-//     .w_tensor_5_12_V_re(w_tensor_5_12_V_reg_10211),
-//     .w_tensor_5_13_V_re(w_tensor_5_13_V_reg_10216),
-//     .w_tensor_5_14_V_re(w_tensor_5_14_V_reg_10221),
-//     .w_tensor_5_15_V_re(w_tensor_5_15_V_reg_10226),
-//     .w_tensor_6_0_V_rea(w_tensor_6_0_V_reg_10231),
-//     .w_tensor_6_1_V_rea(w_tensor_6_1_V_reg_10236),
-//     .w_tensor_6_2_V_rea(w_tensor_6_2_V_reg_10241),
-//     .w_tensor_6_3_V_rea(w_tensor_6_3_V_reg_10246),
-//     .w_tensor_6_4_V_rea(w_tensor_6_4_V_reg_10251),
-//     .w_tensor_6_5_V_rea(w_tensor_6_5_V_reg_10256),
-//     .w_tensor_6_6_V_rea(w_tensor_6_6_V_reg_10261),
-//     .w_tensor_6_7_V_rea(w_tensor_6_7_V_reg_10266),
-//     .w_tensor_6_8_V_rea(w_tensor_6_8_V_reg_10271),
-//     .w_tensor_6_9_V_rea(w_tensor_6_9_V_reg_10276),
-//     .w_tensor_6_10_V_re(w_tensor_6_10_V_reg_10281),
-//     .w_tensor_6_11_V_re(w_tensor_6_11_V_reg_10286),
-//     .w_tensor_6_12_V_re(w_tensor_6_12_V_reg_10291),
-//     .w_tensor_6_13_V_re(w_tensor_6_13_V_reg_10296),
-//     .w_tensor_6_14_V_re(w_tensor_6_14_V_reg_10301),
-//     .w_tensor_6_15_V_re(w_tensor_6_15_V_reg_10306),
-//     .w_tensor_7_0_V_rea(w_tensor_7_0_V_reg_10311),
-//     .w_tensor_7_1_V_rea(w_tensor_7_1_V_reg_10316),
-//     .w_tensor_7_2_V_rea(w_tensor_7_2_V_reg_10321),
-//     .w_tensor_7_3_V_rea(w_tensor_7_3_V_reg_10326),
-//     .w_tensor_7_4_V_rea(w_tensor_7_4_V_reg_10331),
-//     .w_tensor_7_5_V_rea(w_tensor_7_5_V_reg_10336),
-//     .w_tensor_7_6_V_rea(w_tensor_7_6_V_reg_10341),
-//     .w_tensor_7_7_V_rea(w_tensor_7_7_V_reg_10346),
-//     .w_tensor_7_8_V_rea(w_tensor_7_8_V_reg_10351),
-//     .w_tensor_7_9_V_rea(w_tensor_7_9_V_reg_10356),
-//     .w_tensor_7_10_V_re(w_tensor_7_10_V_reg_10361),
-//     .w_tensor_7_11_V_re(w_tensor_7_11_V_reg_10366),
-//     .w_tensor_7_12_V_re(w_tensor_7_12_V_reg_10371),
-//     .w_tensor_7_13_V_re(w_tensor_7_13_V_reg_10376),
-//     .w_tensor_7_14_V_re(w_tensor_7_14_V_reg_10381),
-//     .w_tensor_7_15_V_re(w_tensor_7_15_V_reg_10386),
-//     .w_tensor_8_0_V_rea(w_tensor_8_0_V_reg_10391),
-//     .w_tensor_8_1_V_rea(w_tensor_8_1_V_reg_10396),
-//     .w_tensor_8_2_V_rea(w_tensor_8_2_V_reg_10401),
-//     .w_tensor_8_3_V_rea(w_tensor_8_3_V_reg_10406),
-//     .w_tensor_8_4_V_rea(w_tensor_8_4_V_reg_10411),
-//     .w_tensor_8_5_V_rea(w_tensor_8_5_V_reg_10416),
-//     .w_tensor_8_6_V_rea(w_tensor_8_6_V_reg_10421),
-//     .w_tensor_8_7_V_rea(w_tensor_8_7_V_reg_10426),
-//     .w_tensor_8_8_V_rea(w_tensor_8_8_V_reg_10431),
-//     .w_tensor_8_9_V_rea(w_tensor_8_9_V_reg_10436),
-//     .w_tensor_8_10_V_re(w_tensor_8_10_V_reg_10441),
-//     .w_tensor_8_11_V_re(w_tensor_8_11_V_reg_10446),
-//     .w_tensor_8_12_V_re(w_tensor_8_12_V_reg_10451),
-//     .w_tensor_8_13_V_re(w_tensor_8_13_V_reg_10456),
-//     .w_tensor_8_14_V_re(w_tensor_8_14_V_reg_10461),
-//     .w_tensor_8_15_V_re(w_tensor_8_15_V_reg_10466),
-//     .w_tensor_9_0_V_rea(w_tensor_9_0_V_reg_10471),
-//     .w_tensor_9_1_V_rea(w_tensor_9_1_V_reg_10476),
-//     .w_tensor_9_2_V_rea(w_tensor_9_2_V_reg_10481),
-//     .w_tensor_9_3_V_rea(w_tensor_9_3_V_reg_10486),
-//     .w_tensor_9_4_V_rea(w_tensor_9_4_V_reg_10491),
-//     .w_tensor_9_5_V_rea(w_tensor_9_5_V_reg_10496),
-//     .w_tensor_9_6_V_rea(w_tensor_9_6_V_reg_10501),
-//     .w_tensor_9_7_V_rea(w_tensor_9_7_V_reg_10506),
-//     .w_tensor_9_8_V_rea(w_tensor_9_8_V_reg_10511),
-//     .w_tensor_9_9_V_rea(w_tensor_9_9_V_reg_10516),
-//     .w_tensor_9_10_V_re(w_tensor_9_10_V_reg_10521),
-//     .w_tensor_9_11_V_re(w_tensor_9_11_V_reg_10526),
-//     .w_tensor_9_12_V_re(w_tensor_9_12_V_reg_10531),
-//     .w_tensor_9_13_V_re(w_tensor_9_13_V_reg_10536),
-//     .w_tensor_9_14_V_re(w_tensor_9_14_V_reg_10541),
-//     .w_tensor_9_15_V_re(w_tensor_9_15_V_reg_10546),
-//     .w_tensor_10_0_V_re(w_tensor_10_0_V_reg_10551),
-//     .w_tensor_10_1_V_re(w_tensor_10_1_V_reg_10556),
-//     .w_tensor_10_2_V_re(w_tensor_10_2_V_reg_10561),
-//     .w_tensor_10_3_V_re(w_tensor_10_3_V_reg_10566),
-//     .w_tensor_10_4_V_re(w_tensor_10_4_V_reg_10571),
-//     .w_tensor_10_5_V_re(w_tensor_10_5_V_reg_10576),
-//     .w_tensor_10_6_V_re(w_tensor_10_6_V_reg_10581),
-//     .w_tensor_10_7_V_re(w_tensor_10_7_V_reg_10586),
-//     .w_tensor_10_8_V_re(w_tensor_10_8_V_reg_10591),
-//     .w_tensor_10_9_V_re(w_tensor_10_9_V_reg_10596),
-//     .w_tensor_10_10_V_r(w_tensor_10_10_V_reg_10601),
-//     .w_tensor_10_11_V_r(w_tensor_10_11_V_reg_10606),
-//     .w_tensor_10_12_V_r(w_tensor_10_12_V_reg_10611),
-//     .w_tensor_10_13_V_r(w_tensor_10_13_V_reg_10616),
-//     .w_tensor_10_14_V_r(w_tensor_10_14_V_reg_10621),
-//     .w_tensor_10_15_V_r(w_tensor_10_15_V_reg_10626),
-//     .w_tensor_11_0_V_re(w_tensor_11_0_V_reg_10631),
-//     .w_tensor_11_1_V_re(w_tensor_11_1_V_reg_10636),
-//     .w_tensor_11_2_V_re(w_tensor_11_2_V_reg_10641),
-//     .w_tensor_11_3_V_re(w_tensor_11_3_V_reg_10646),
-//     .w_tensor_11_4_V_re(w_tensor_11_4_V_reg_10651),
-//     .w_tensor_11_5_V_re(w_tensor_11_5_V_reg_10656),
-//     .w_tensor_11_6_V_re(w_tensor_11_6_V_reg_10661),
-//     .w_tensor_11_7_V_re(w_tensor_11_7_V_reg_10666),
-//     .w_tensor_11_8_V_re(w_tensor_11_8_V_reg_10671),
-//     .w_tensor_11_9_V_re(w_tensor_11_9_V_reg_10676),
-//     .w_tensor_11_10_V_r(w_tensor_11_10_V_reg_10681),
-//     .w_tensor_11_11_V_r(w_tensor_11_11_V_reg_10686),
-//     .w_tensor_11_12_V_r(w_tensor_11_12_V_reg_10691),
-//     .w_tensor_11_13_V_r(w_tensor_11_13_V_reg_10696),
-//     .w_tensor_11_14_V_r(w_tensor_11_14_V_reg_10701),
-//     .w_tensor_11_15_V_r(w_tensor_11_15_V_reg_10706),
-//     .w_tensor_12_0_V_re(w_tensor_12_0_V_reg_10711),
-//     .w_tensor_12_1_V_re(w_tensor_12_1_V_reg_10716),
-//     .w_tensor_12_2_V_re(w_tensor_12_2_V_reg_10721),
-//     .w_tensor_12_3_V_re(w_tensor_12_3_V_reg_10726),
-//     .w_tensor_12_4_V_re(w_tensor_12_4_V_reg_10731),
-//     .w_tensor_12_5_V_re(w_tensor_12_5_V_reg_10736),
-//     .w_tensor_12_6_V_re(w_tensor_12_6_V_reg_10741),
-//     .w_tensor_12_7_V_re(w_tensor_12_7_V_reg_10746),
-//     .w_tensor_12_8_V_re(w_tensor_12_8_V_reg_10751),
-//     .w_tensor_12_9_V_re(w_tensor_12_9_V_reg_10756),
-//     .w_tensor_12_10_V_r(w_tensor_12_10_V_reg_10761),
-//     .w_tensor_12_11_V_r(w_tensor_12_11_V_reg_10766),
-//     .w_tensor_12_12_V_r(w_tensor_12_12_V_reg_10771),
-//     .w_tensor_12_13_V_r(w_tensor_12_13_V_reg_10776),
-//     .w_tensor_12_14_V_r(w_tensor_12_14_V_reg_10781),
-//     .w_tensor_12_15_V_r(w_tensor_12_15_V_reg_10786),
-//     .w_tensor_13_0_V_re(w_tensor_13_0_V_reg_10791),
-//     .w_tensor_13_1_V_re(w_tensor_13_1_V_reg_10796),
-//     .w_tensor_13_2_V_re(w_tensor_13_2_V_reg_10801),
-//     .w_tensor_13_3_V_re(w_tensor_13_3_V_reg_10806),
-//     .w_tensor_13_4_V_re(w_tensor_13_4_V_reg_10811),
-//     .w_tensor_13_5_V_re(w_tensor_13_5_V_reg_10816),
-//     .w_tensor_13_6_V_re(w_tensor_13_6_V_reg_10821),
-//     .w_tensor_13_7_V_re(w_tensor_13_7_V_reg_10826),
-//     .w_tensor_13_8_V_re(w_tensor_13_8_V_reg_10831),
-//     .w_tensor_13_9_V_re(w_tensor_13_9_V_reg_10836),
-//     .w_tensor_13_10_V_r(w_tensor_13_10_V_reg_10841),
-//     .w_tensor_13_11_V_r(w_tensor_13_11_V_reg_10846),
-//     .w_tensor_13_12_V_r(w_tensor_13_12_V_reg_10851),
-//     .w_tensor_13_13_V_r(w_tensor_13_13_V_reg_10856),
-//     .w_tensor_13_14_V_r(w_tensor_13_14_V_reg_10861),
-//     .w_tensor_13_15_V_r(w_tensor_13_15_V_reg_10866),
-//     .w_tensor_14_0_V_re(w_tensor_14_0_V_reg_10871),
-//     .w_tensor_14_1_V_re(w_tensor_14_1_V_reg_10876),
-//     .w_tensor_14_2_V_re(w_tensor_14_2_V_reg_10881),
-//     .w_tensor_14_3_V_re(w_tensor_14_3_V_reg_10886),
-//     .w_tensor_14_4_V_re(w_tensor_14_4_V_reg_10891),
-//     .w_tensor_14_5_V_re(w_tensor_14_5_V_reg_10896),
-//     .w_tensor_14_6_V_re(w_tensor_14_6_V_reg_10901),
-//     .w_tensor_14_7_V_re(w_tensor_14_7_V_reg_10906),
-//     .w_tensor_14_8_V_re(w_tensor_14_8_V_reg_10911),
-//     .w_tensor_14_9_V_re(w_tensor_14_9_V_reg_10916),
-//     .w_tensor_14_10_V_r(w_tensor_14_10_V_reg_10921),
-//     .w_tensor_14_11_V_r(w_tensor_14_11_V_reg_10926),
-//     .w_tensor_14_12_V_r(w_tensor_14_12_V_reg_10931),
-//     .w_tensor_14_13_V_r(w_tensor_14_13_V_reg_10936),
-//     .w_tensor_14_14_V_r(w_tensor_14_14_V_reg_10941),
-//     .w_tensor_14_15_V_r(w_tensor_14_15_V_reg_10946),
-//     .w_tensor_15_0_V_re(w_tensor_15_0_V_reg_10951),
-//     .w_tensor_15_1_V_re(w_tensor_15_1_V_reg_10956),
-//     .w_tensor_15_2_V_re(w_tensor_15_2_V_reg_10961),
-//     .w_tensor_15_3_V_re(w_tensor_15_3_V_reg_10966),
-//     .w_tensor_15_4_V_re(w_tensor_15_4_V_reg_10971),
-//     .w_tensor_15_5_V_re(w_tensor_15_5_V_reg_10976),
-//     .w_tensor_15_6_V_re(w_tensor_15_6_V_reg_10981),
-//     .w_tensor_15_7_V_re(w_tensor_15_7_V_reg_10986),
-//     .w_tensor_15_8_V_re(w_tensor_15_8_V_reg_10991),
-//     .w_tensor_15_9_V_re(w_tensor_15_9_V_reg_10996),
-//     .w_tensor_15_10_V_r(w_tensor_15_10_V_reg_11001),
-//     .w_tensor_15_11_V_r(w_tensor_15_11_V_reg_11006),
-//     .w_tensor_15_12_V_r(w_tensor_15_12_V_reg_11011),
-//     .w_tensor_15_13_V_r(w_tensor_15_13_V_reg_11016),
-//     .w_tensor_15_14_V_r(w_tensor_15_14_V_reg_11021),
-//     .w_tensor_15_15_V_r(w_tensor_15_15_V_reg_11026),
-//     .a_tensor_0_0_V_rea(a_tensor_0_0_V_reg_11111),
-//     .a_tensor_0_1_V_rea(reg_1875),
-//     .a_tensor_0_2_V_rea(reg_1880),
-//     .a_tensor_0_3_V_rea(reg_1885),
-//     .a_tensor_0_4_V_rea(reg_1890),
-//     .a_tensor_0_5_V_rea(reg_1895),
-//     .a_tensor_0_6_V_rea(reg_1900),
-//     .a_tensor_0_7_V_rea(reg_1905),
-//     .a_tensor_0_8_V_rea(reg_1910),
-//     .a_tensor_0_9_V_rea(reg_1915),
-//     .a_tensor_0_10_V_re(reg_1920),
-//     .a_tensor_0_11_V_re(reg_1925),
-//     .a_tensor_0_12_V_re(reg_1930),
-//     .a_tensor_0_13_V_re(reg_1935),
-//     .a_tensor_0_14_V_re(reg_1940),
-//     .a_tensor_0_15_V_re(reg_1945),
-//     .gemm_reset(grp_gemm_core_fu_1331_gemm_reset),
-//     .ap_return_0(grp_gemm_core_fu_1331_ap_return_0),
-//     .ap_return_1(grp_gemm_core_fu_1331_ap_return_1),
-//     .ap_return_2(grp_gemm_core_fu_1331_ap_return_2),
-//     .ap_return_3(grp_gemm_core_fu_1331_ap_return_3),
-//     .ap_return_4(grp_gemm_core_fu_1331_ap_return_4),
-//     .ap_return_5(grp_gemm_core_fu_1331_ap_return_5),
-//     .ap_return_6(grp_gemm_core_fu_1331_ap_return_6),
-//     .ap_return_7(grp_gemm_core_fu_1331_ap_return_7),
-//     .ap_return_8(grp_gemm_core_fu_1331_ap_return_8),
-//     .ap_return_9(grp_gemm_core_fu_1331_ap_return_9),
-//     .ap_return_10(grp_gemm_core_fu_1331_ap_return_10),
-//     .ap_return_11(grp_gemm_core_fu_1331_ap_return_11),
-//     .ap_return_12(grp_gemm_core_fu_1331_ap_return_12),
-//     .ap_return_13(grp_gemm_core_fu_1331_ap_return_13),
-//     .ap_return_14(grp_gemm_core_fu_1331_ap_return_14),
-//     .ap_return_15(grp_gemm_core_fu_1331_ap_return_15),
-//     .ap_return_16(grp_gemm_core_fu_1331_ap_return_16),
-//     .ap_return_17(grp_gemm_core_fu_1331_ap_return_17),
-//     .ap_return_18(grp_gemm_core_fu_1331_ap_return_18),
-//     .ap_return_19(grp_gemm_core_fu_1331_ap_return_19),
-//     .ap_return_20(grp_gemm_core_fu_1331_ap_return_20),
-//     .ap_return_21(grp_gemm_core_fu_1331_ap_return_21),
-//     .ap_return_22(grp_gemm_core_fu_1331_ap_return_22),
-//     .ap_return_23(grp_gemm_core_fu_1331_ap_return_23),
-//     .ap_return_24(grp_gemm_core_fu_1331_ap_return_24),
-//     .ap_return_25(grp_gemm_core_fu_1331_ap_return_25),
-//     .ap_return_26(grp_gemm_core_fu_1331_ap_return_26),
-//     .ap_return_27(grp_gemm_core_fu_1331_ap_return_27),
-//     .ap_return_28(grp_gemm_core_fu_1331_ap_return_28),
-//     .ap_return_29(grp_gemm_core_fu_1331_ap_return_29),
-//     .ap_return_30(grp_gemm_core_fu_1331_ap_return_30),
-//     .ap_return_31(grp_gemm_core_fu_1331_ap_return_31)
-// );
