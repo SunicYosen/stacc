@@ -1544,7 +1544,7 @@ begin
             end
         end
         WORK: begin
-            if(all_zeros)begin
+            if(out_valid)begin
                 state_machine_temp = DONE;
             end
             else begin
@@ -1552,7 +1552,7 @@ begin
             end
         end
         DONE: begin
-            if(input_valid) begin
+            if(in_valid) begin
                 state_machine_temp = WORK;
             end
             else begin
@@ -1618,7 +1618,7 @@ always@(posedge clk) begin
     begin
         out_valid  <= 1'b0;
     end
-    else if(acc_valid & all_zeros_iter2) begin
+    else if(is_state_work & all_zeros_iter2) begin
         out_valid <= 1'b1;
     end
     else begin
@@ -2232,22 +2232,22 @@ always@(posedge clk)begin
     end
 end
 
-reg [7:0] current_input_mask_0;
-reg [7:0] current_input_mask_1;
-reg [7:0] current_input_mask_2;
-reg [7:0] current_input_mask_3;
-reg [7:0] current_input_mask_4;
-reg [7:0] current_input_mask_5;
-reg [7:0] current_input_mask_6;
-reg [7:0] current_input_mask_7;
-reg [7:0] current_input_mask_8;
-reg [7:0] current_input_mask_9;
-reg [7:0] current_input_mask_a;
-reg [7:0] current_input_mask_b;
-reg [7:0] current_input_mask_c;
-reg [7:0] current_input_mask_d;
-reg [7:0] current_input_mask_e;
-reg [7:0] current_input_mask_f;
+reg [7:0] input_mask_0;
+reg [7:0] input_mask_1;
+reg [7:0] input_mask_2;
+reg [7:0] input_mask_3;
+reg [7:0] input_mask_4;
+reg [7:0] input_mask_5;
+reg [7:0] input_mask_6;
+reg [7:0] input_mask_7;
+reg [7:0] input_mask_8;
+reg [7:0] input_mask_9;
+reg [7:0] input_mask_a;
+reg [7:0] input_mask_b;
+reg [7:0] input_mask_c;
+reg [7:0] input_mask_d;
+reg [7:0] input_mask_e;
+reg [7:0] input_mask_f;
 
 reg [7:0] current_input_0;
 reg [7:0] current_input_1;
@@ -2302,152 +2302,152 @@ wire [2:0] input_f_lo_position;
 // Input Mask
 always @(*) begin
     if(~ input_0_zero_flag) begin
-        current_input_mask_0 <= ~(8'b1111_1111 << input_0_lo_position);
+        input_mask_0 <= ~(8'b1111_1111 << input_0_lo_position);
     end
     else begin
-        current_input_mask_0 <= 8'b1111_1111;
+        input_mask_0 <= 8'b1111_1111;
     end
 end
 
 always @(*) begin
     if(~ input_1_zero_flag) begin
-        current_input_mask_1 <= ~(8'b1111_1111 << input_1_lo_position);
+        input_mask_1 <= ~(8'b1111_1111 << input_1_lo_position);
     end
     else begin
-        current_input_mask_1 <= 8'b1111_1111;
+        input_mask_1 <= 8'b1111_1111;
     end
 end
 
 always @(*) begin
     if(~ input_2_zero_flag) begin
-        current_input_mask_2 <= ~(8'b1111_1111 << input_2_lo_position);
+        input_mask_2 <= ~(8'b1111_1111 << input_2_lo_position);
     end
     else begin
-        current_input_mask_2 <= 8'b1111_1111;
+        input_mask_2 <= 8'b1111_1111;
     end
 end
 
 always @(*) begin
     if(~ input_3_zero_flag) begin
-        current_input_mask_3 <= ~(8'b1111_1111 << input_3_lo_position);
+        input_mask_3 <= ~(8'b1111_1111 << input_3_lo_position);
     end
     else begin
-        current_input_mask_3 <= 8'b1111_1111;
+        input_mask_3 <= 8'b1111_1111;
     end
 end
 
 always @(*) begin
     if(~ input_4_zero_flag) begin
-        current_input_mask_4 <= ~(8'b1111_1111 << input_4_lo_position);
+        input_mask_4 <= ~(8'b1111_1111 << input_4_lo_position);
     end
     else begin
-        current_input_mask_4 <= 8'b1111_1111;
+        input_mask_4 <= 8'b1111_1111;
     end
 end
 
 always @(*) begin
     if(~ input_5_zero_flag) begin
-        current_input_mask_5 <= ~(8'b1111_1111 << input_5_lo_position);
+        input_mask_5 <= ~(8'b1111_1111 << input_5_lo_position);
     end
     else begin
-        current_input_mask_5 <= 8'b1111_1111;
+        input_mask_5 <= 8'b1111_1111;
     end
 end
 
 always @(*) begin
     if(~ input_6_zero_flag) begin
-        current_input_mask_6 <= ~(8'b1111_1111 << input_6_lo_position);
+        input_mask_6 <= ~(8'b1111_1111 << input_6_lo_position);
     end
     else begin
-        current_input_mask_6 <= 8'b1111_1111;
+        input_mask_6 <= 8'b1111_1111;
     end
 end
 
 always @(*) begin
     if(~ input_7_zero_flag) begin
-        current_input_mask_7 <= ~(8'b1111_1111 << input_7_lo_position);
+        input_mask_7 <= ~(8'b1111_1111 << input_7_lo_position);
     end
     else begin
-        current_input_mask_7 <= 8'b1111_1111;
+        input_mask_7 <= 8'b1111_1111;
     end
 end
 
 always @(*) begin
     if(~ input_8_zero_flag) begin
-        current_input_mask_8 <= ~(8'b1111_1111 << input_8_lo_position);
+        input_mask_8 <= ~(8'b1111_1111 << input_8_lo_position);
     end
     else begin
-        current_input_mask_8 <= 8'b1111_1111;
+        input_mask_8 <= 8'b1111_1111;
     end
 end
 
 always @(*) begin
     if(~ input_9_zero_flag) begin
-        current_input_mask_9 <= ~(8'b1111_1111 << input_9_lo_position);
+        input_mask_9 <= ~(8'b1111_1111 << input_9_lo_position);
     end
     else begin
-        current_input_mask_9 <= 8'b1111_1111;
+        input_mask_9 <= 8'b1111_1111;
     end
 end
 
 always @(*) begin
     if(~ input_a_zero_flag) begin
-        current_input_mask_a <= ~(8'b1111_1111 << input_a_lo_position);
+        input_mask_a <= ~(8'b1111_1111 << input_a_lo_position);
     end
     else begin
-        current_input_mask_a <= 8'b1111_1111;
+        input_mask_a <= 8'b1111_1111;
     end
 end
 
 always @(*) begin
     if(~ input_b_zero_flag) begin
-        current_input_mask_b <= ~(8'b1111_1111 << input_b_lo_position);
+        input_mask_b <= ~(8'b1111_1111 << input_b_lo_position);
     end
     else begin
-        current_input_mask_b <= 8'b1111_1111;
+        input_mask_b <= 8'b1111_1111;
     end
 end
 
 always @(*) begin
     if(~ input_c_zero_flag) begin
-        current_input_mask_c <= ~(8'b1111_1111 << input_c_lo_position);
+        input_mask_c <= ~(8'b1111_1111 << input_c_lo_position);
     end
     else begin
-        current_input_mask_c <= 8'b1111_1111;
+        input_mask_c <= 8'b1111_1111;
     end
 end
 
 always @(*) begin
     if(~ input_d_zero_flag) begin
-        current_input_mask_d <= ~(8'b1111_1111 << input_d_lo_position);
+        input_mask_d <= ~(8'b1111_1111 << input_d_lo_position);
     end
     else begin
-        current_input_mask_d <= 8'b1111_1111;
+        input_mask_d <= 8'b1111_1111;
     end
 end
 
 always @(*) begin
     if(~ input_e_zero_flag) begin
-        current_input_mask_e <= ~(8'b1111_1111 << input_e_lo_position);
+        input_mask_e <= ~(8'b1111_1111 << input_e_lo_position);
     end
     else begin
-        current_input_mask_e <= 8'b1111_1111;
+        input_mask_e <= 8'b1111_1111;
     end
 end
 
 always @(*) begin
     if(~ input_f_zero_flag) begin
-        current_input_mask_f <= ~(8'b1111_1111 << input_f_lo_position);
+        input_mask_f <= ~(8'b1111_1111 << input_f_lo_position);
     end
     else begin
-        current_input_mask_f <= 8'b1111_1111;
+        input_mask_f <= 8'b1111_1111;
     end
 end
 
 // Current Input
 always @(posedge clk) begin
-    if(input_valid) begin
-        current_input_0 <= input_0 & current_input_mask_0;
+    if(is_state_work == 1'b1) begin
+        current_input_0 <= input_0 & input_mask_0;
     end
     else begin
         current_input_0 <= 8'b0000_0000;
@@ -2455,8 +2455,8 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(input_valid) begin
-        current_input_1 <= input_1 & current_input_mask_1;
+    if(is_state_work == 1'b1) begin
+        current_input_1 <= input_1 & input_mask_1;
     end
     else begin
         current_input_1 <= 8'b0000_0000;
@@ -2464,8 +2464,8 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(input_valid) begin
-        current_input_2 <= input_2 & current_input_mask_2;
+    if(is_state_work == 1'b1) begin
+        current_input_2 <= input_2 & input_mask_2;
     end
     else begin
         current_input_2 <= 8'b0000_0000;
@@ -2473,8 +2473,8 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(input_valid) begin
-        current_input_3 <= input_3 & current_input_mask_3;
+    if(is_state_work == 1'b1) begin
+        current_input_3 <= input_3 & input_mask_3;
     end
     else begin
         current_input_3 <= 8'b0000_0000;
@@ -2482,8 +2482,8 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(input_valid) begin
-        current_input_4 <= input_4 & current_input_mask_4;
+    if(is_state_work == 1'b1) begin
+        current_input_4 <= input_4 & input_mask_4;
     end
     else begin
         current_input_4 <= 8'b0000_0000;
@@ -2491,8 +2491,8 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(input_valid) begin
-        current_input_5 <= input_5 & current_input_mask_5;
+    if(is_state_work == 1'b1) begin
+        current_input_5 <= input_5 & input_mask_5;
     end
     else begin
         current_input_5 <= 8'b0000_0000;
@@ -2500,8 +2500,8 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(input_valid) begin
-        current_input_6 <= input_6 & current_input_mask_6;
+    if(is_state_work == 1'b1) begin
+        current_input_6 <= input_6 & input_mask_6;
     end
     else begin
         current_input_6 <= 8'b0000_0000;
@@ -2509,8 +2509,8 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(input_valid) begin
-        current_input_7 <= input_7 & current_input_mask_7;
+    if(is_state_work == 1'b1) begin
+        current_input_7 <= input_7 & input_mask_7;
     end
     else begin
         current_input_7 <= 8'b0000_0000;
@@ -2518,8 +2518,8 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(input_valid) begin
-        current_input_8 <= input_8 & current_input_mask_8;
+    if(is_state_work == 1'b1) begin
+        current_input_8 <= input_8 & input_mask_8;
     end
     else begin
         current_input_8 <= 8'b0000_0000;
@@ -2527,8 +2527,8 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(input_valid) begin
-        current_input_9 <= input_9 & current_input_mask_9;
+    if(is_state_work == 1'b1) begin
+        current_input_9 <= input_9 & input_mask_9;
     end
     else begin
         current_input_9 <= 8'b0000_0000;
@@ -2536,8 +2536,8 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(input_valid) begin
-        current_input_a <= input_a & current_input_mask_a;
+    if(is_state_work == 1'b1) begin
+        current_input_a <= input_a & input_mask_a;
     end
     else begin
         current_input_a <= 8'b0000_0000;
@@ -2545,8 +2545,8 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(input_valid) begin
-        current_input_b <= input_b & current_input_mask_b;
+    if(is_state_work == 1'b1) begin
+        current_input_b <= input_b & input_mask_b;
     end
     else begin
         current_input_b <= 8'b0000_0000;
@@ -2554,8 +2554,8 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(input_valid) begin
-        current_input_c <= input_c & current_input_mask_c;
+    if(is_state_work == 1'b1) begin
+        current_input_c <= input_c & input_mask_c;
     end
     else begin
         current_input_c <= 8'b0000_0000;
@@ -2563,8 +2563,8 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(input_valid) begin
-        current_input_d <= input_d & current_input_mask_d;
+    if(is_state_work == 1'b1) begin
+        current_input_d <= input_d & input_mask_d;
     end
     else begin
         current_input_d <= 8'b0000_0000;
@@ -2572,8 +2572,8 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(input_valid) begin
-        current_input_e <= input_e & current_input_mask_e;
+    if(is_state_work == 1'b1) begin
+        current_input_e <= input_e & input_mask_e;
     end
     else begin
         current_input_e <= 8'b0000_0000;
@@ -2581,8 +2581,8 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(input_valid) begin
-        current_input_f <= input_f & current_input_mask_f;
+    if(is_state_work == 1'b1) begin
+        current_input_f <= input_f & input_mask_f;
     end
     else begin
         current_input_f <= 8'b0000_0000;
@@ -2669,13 +2669,18 @@ always@(posedge clk)begin
     if(rst) begin
         all_zeros_iter1 <= 1'b0;
     end
-    if(is_state_work)begin
+    else if(is_state_work)begin
         all_zeros_iter1 <= all_zeros;
     end
 end
 
 always@(posedge clk)begin
-    all_zeros_iter2 <= all_zeros;
+    if(rst) begin
+        all_zeros_iter1 <= 1'b0;
+    end
+    else if(is_state_work)begin
+        all_zeros_iter2 <= all_zeros_iter1;
+    end
 end
 
 assign weight_ext_00 = {{8{weight_00[7]}}, w_00};
