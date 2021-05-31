@@ -40,8 +40,8 @@ assign nodec = !nodeb;
 assign noded = in_data[5] & nodec;
 assign nodee = in_data[7] | noded;
 assign nodef = !nodea;
-assign node10 = nodea ? nodeb : node4;
-assign node11 = nodea ? nodee : node7;
+assign node10 = nodea ? node4 : nodeb;
+assign node11 = nodea ? node7 : nodee;
 
 assign lo_position = {nodef, node10, node11};
 assign zero_flag  = node3;
@@ -1521,6 +1521,7 @@ reg [2:0] state_machine_temp;
 wire      is_state_idle;
 wire      is_state_work;
 wire      is_state_done;
+reg       is_state_work_iter0;
 
 assign is_state_idle = state_machine[4'd0];
 assign is_state_work = state_machine[4'd1];
@@ -1544,7 +1545,7 @@ begin
             end
         end
         WORK: begin
-            if(out_valid)begin
+            if(all_zeros & is_state_work_iter0)begin
                 state_machine_temp = DONE;
             end
             else begin
@@ -1565,6 +1566,18 @@ begin
     endcase
 end
 
+always @(posedge clk) begin
+    if(rst) begin
+        is_state_work_iter0 <= 1'b0;
+    end
+    else if(is_state_work) begin
+        is_state_work_iter0 <= 1'b1;
+    end
+    else begin
+        is_state_work_iter0 <= 1'b0;
+    end
+end
+
 always @(posedge clk)begin
     if(rst) begin
         state_machine <= IDLE;
@@ -1578,7 +1591,7 @@ always@(posedge clk) begin
     if(rst) begin
         input_valid <= 1'b0;
     end
-    else if(is_state_idle | is_state_done) begin
+    else begin
         input_valid <= in_valid;
     end
 end
@@ -1618,7 +1631,10 @@ always@(posedge clk) begin
     begin
         out_valid  <= 1'b0;
     end
-    else if(is_state_work & all_zeros_iter2) begin
+    else if(is_state_done) begin
+        out_valid <= 1'b0;
+    end
+    else if(is_state_work_iter0 & all_zeros) begin
         out_valid <= 1'b1;
     end
     else begin
@@ -1628,7 +1644,7 @@ end
 
 // ACC_x
 always@(posedge clk)begin
-    if(rst | (in_valid & gemm_reset)) // set to 0 if reset or gemm_reset
+    if(rst) // set to 0 if reset or gemm_reset
     begin
         acc_0 <= 32'h0000_0000;
         acc_1 <= 32'h0000_0000;
@@ -1670,7 +1686,7 @@ end
 
 // INPUT_x
 always@(posedge clk)begin
-    if(rst | (in_valid & gemm_reset)) // reset or gemm_reset
+    if(rst) // reset or gemm_reset
     begin
         input_0 <= 8'b0000_0000;
         input_1 <= 8'b0000_0000;
@@ -2305,7 +2321,7 @@ always @(*) begin
         input_mask_0 <= ~(8'b1111_1111 << input_0_lo_position);
     end
     else begin
-        input_mask_0 <= 8'b1111_1111;
+        input_mask_0 <= 8'b0000_0000;
     end
 end
 
@@ -2314,7 +2330,7 @@ always @(*) begin
         input_mask_1 <= ~(8'b1111_1111 << input_1_lo_position);
     end
     else begin
-        input_mask_1 <= 8'b1111_1111;
+        input_mask_1 <= 8'b0000_0000;
     end
 end
 
@@ -2323,7 +2339,7 @@ always @(*) begin
         input_mask_2 <= ~(8'b1111_1111 << input_2_lo_position);
     end
     else begin
-        input_mask_2 <= 8'b1111_1111;
+        input_mask_2 <= 8'b0000_0000;
     end
 end
 
@@ -2332,7 +2348,7 @@ always @(*) begin
         input_mask_3 <= ~(8'b1111_1111 << input_3_lo_position);
     end
     else begin
-        input_mask_3 <= 8'b1111_1111;
+        input_mask_3 <= 8'b0000_0000;
     end
 end
 
@@ -2341,7 +2357,7 @@ always @(*) begin
         input_mask_4 <= ~(8'b1111_1111 << input_4_lo_position);
     end
     else begin
-        input_mask_4 <= 8'b1111_1111;
+        input_mask_4 <= 8'b0000_0000;
     end
 end
 
@@ -2350,7 +2366,7 @@ always @(*) begin
         input_mask_5 <= ~(8'b1111_1111 << input_5_lo_position);
     end
     else begin
-        input_mask_5 <= 8'b1111_1111;
+        input_mask_5 <= 8'b0000_0000;
     end
 end
 
@@ -2359,7 +2375,7 @@ always @(*) begin
         input_mask_6 <= ~(8'b1111_1111 << input_6_lo_position);
     end
     else begin
-        input_mask_6 <= 8'b1111_1111;
+        input_mask_6 <= 8'b0000_0000;
     end
 end
 
@@ -2368,7 +2384,7 @@ always @(*) begin
         input_mask_7 <= ~(8'b1111_1111 << input_7_lo_position);
     end
     else begin
-        input_mask_7 <= 8'b1111_1111;
+        input_mask_7 <= 8'b0000_0000;
     end
 end
 
@@ -2377,7 +2393,7 @@ always @(*) begin
         input_mask_8 <= ~(8'b1111_1111 << input_8_lo_position);
     end
     else begin
-        input_mask_8 <= 8'b1111_1111;
+        input_mask_8 <= 8'b0000_0000;
     end
 end
 
@@ -2386,7 +2402,7 @@ always @(*) begin
         input_mask_9 <= ~(8'b1111_1111 << input_9_lo_position);
     end
     else begin
-        input_mask_9 <= 8'b1111_1111;
+        input_mask_9 <= 8'b0000_0000;
     end
 end
 
@@ -2395,7 +2411,7 @@ always @(*) begin
         input_mask_a <= ~(8'b1111_1111 << input_a_lo_position);
     end
     else begin
-        input_mask_a <= 8'b1111_1111;
+        input_mask_a <= 8'b0000_0000;
     end
 end
 
@@ -2404,7 +2420,7 @@ always @(*) begin
         input_mask_b <= ~(8'b1111_1111 << input_b_lo_position);
     end
     else begin
-        input_mask_b <= 8'b1111_1111;
+        input_mask_b <= 8'b0000_0000;
     end
 end
 
@@ -2413,7 +2429,7 @@ always @(*) begin
         input_mask_c <= ~(8'b1111_1111 << input_c_lo_position);
     end
     else begin
-        input_mask_c <= 8'b1111_1111;
+        input_mask_c <= 8'b0000_0000;
     end
 end
 
@@ -2422,7 +2438,7 @@ always @(*) begin
         input_mask_d <= ~(8'b1111_1111 << input_d_lo_position);
     end
     else begin
-        input_mask_d <= 8'b1111_1111;
+        input_mask_d <= 8'b0000_0000;
     end
 end
 
@@ -2431,7 +2447,7 @@ always @(*) begin
         input_mask_e <= ~(8'b1111_1111 << input_e_lo_position);
     end
     else begin
-        input_mask_e <= 8'b1111_1111;
+        input_mask_e <= 8'b0000_0000;
     end
 end
 
@@ -2440,14 +2456,17 @@ always @(*) begin
         input_mask_f <= ~(8'b1111_1111 << input_f_lo_position);
     end
     else begin
-        input_mask_f <= 8'b1111_1111;
+        input_mask_f <= 8'b0000_0000;
     end
 end
 
 // Current Input
 always @(posedge clk) begin
-    if(is_state_work == 1'b1) begin
-        current_input_0 <= input_0 & input_mask_0;
+    if(input_valid) begin
+        current_input_0 <= input_0;
+    end
+    else if(is_state_work == 1'b1) begin
+        current_input_0 <= current_input_0 & input_mask_0;
     end
     else begin
         current_input_0 <= 8'b0000_0000;
@@ -2455,8 +2474,11 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(is_state_work == 1'b1) begin
-        current_input_1 <= input_1 & input_mask_1;
+    if(input_valid) begin
+        current_input_1 <= input_1;
+    end
+    else if (is_state_work == 1'b1) begin
+        current_input_1  <= current_input_1 & input_mask_1;
     end
     else begin
         current_input_1 <= 8'b0000_0000;
@@ -2464,8 +2486,11 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(is_state_work == 1'b1) begin
-        current_input_2 <= input_2 & input_mask_2;
+    if(input_valid) begin
+        current_input_2 <= input_2;
+    end
+    else if (is_state_work == 1'b1) begin
+        current_input_2  <= current_input_2 & input_mask_2;
     end
     else begin
         current_input_2 <= 8'b0000_0000;
@@ -2473,8 +2498,11 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(is_state_work == 1'b1) begin
-        current_input_3 <= input_3 & input_mask_3;
+    if(input_valid) begin
+        current_input_3 <= input_3;
+    end
+    else if (is_state_work == 1'b1) begin
+        current_input_3  <= current_input_3 & input_mask_3;
     end
     else begin
         current_input_3 <= 8'b0000_0000;
@@ -2482,8 +2510,11 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(is_state_work == 1'b1) begin
-        current_input_4 <= input_4 & input_mask_4;
+    if(input_valid) begin
+        current_input_4 <= input_4;
+    end
+    else if (is_state_work == 1'b1) begin
+        current_input_4  <= current_input_4 & input_mask_4;
     end
     else begin
         current_input_4 <= 8'b0000_0000;
@@ -2491,8 +2522,11 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(is_state_work == 1'b1) begin
-        current_input_5 <= input_5 & input_mask_5;
+    if(input_valid) begin
+        current_input_5 <= input_5;
+    end
+    else if (is_state_work == 1'b1) begin
+        current_input_5  <= current_input_5 & input_mask_5;
     end
     else begin
         current_input_5 <= 8'b0000_0000;
@@ -2500,8 +2534,11 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(is_state_work == 1'b1) begin
-        current_input_6 <= input_6 & input_mask_6;
+    if(input_valid) begin
+        current_input_6 <= input_6;
+    end
+    else if (is_state_work == 1'b1) begin
+        current_input_6  <= current_input_6 & input_mask_6;
     end
     else begin
         current_input_6 <= 8'b0000_0000;
@@ -2509,8 +2546,11 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(is_state_work == 1'b1) begin
-        current_input_7 <= input_7 & input_mask_7;
+    if(input_valid) begin
+        current_input_7 <= input_7;
+    end
+    else if (is_state_work == 1'b1) begin
+        current_input_7  <= current_input_7 & input_mask_7;
     end
     else begin
         current_input_7 <= 8'b0000_0000;
@@ -2518,8 +2558,11 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(is_state_work == 1'b1) begin
-        current_input_8 <= input_8 & input_mask_8;
+    if(input_valid) begin
+        current_input_8 <= input_8;
+    end
+    else if (is_state_work == 1'b1) begin
+        current_input_8  <= current_input_8 & input_mask_8;
     end
     else begin
         current_input_8 <= 8'b0000_0000;
@@ -2527,8 +2570,11 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(is_state_work == 1'b1) begin
-        current_input_9 <= input_9 & input_mask_9;
+    if(input_valid) begin
+        current_input_9 <= input_9;
+    end
+    else if (is_state_work == 1'b1) begin
+        current_input_9  <= current_input_9 & input_mask_9;
     end
     else begin
         current_input_9 <= 8'b0000_0000;
@@ -2536,8 +2582,11 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(is_state_work == 1'b1) begin
-        current_input_a <= input_a & input_mask_a;
+    if(input_valid) begin
+        current_input_a <= input_a;
+    end
+    else if (is_state_work == 1'b1) begin
+        current_input_a  <= current_input_a & input_mask_a;
     end
     else begin
         current_input_a <= 8'b0000_0000;
@@ -2545,8 +2594,11 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(is_state_work == 1'b1) begin
-        current_input_b <= input_b & input_mask_b;
+    if(input_valid) begin
+        current_input_b <= input_b;
+    end
+    else if (is_state_work == 1'b1) begin
+        current_input_b  <= current_input_b & input_mask_b;
     end
     else begin
         current_input_b <= 8'b0000_0000;
@@ -2554,8 +2606,11 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(is_state_work == 1'b1) begin
-        current_input_c <= input_c & input_mask_c;
+    if(input_valid) begin
+        current_input_c <= input_c;
+    end
+    else if (is_state_work == 1'b1) begin
+        current_input_c  <= current_input_c & input_mask_c;
     end
     else begin
         current_input_c <= 8'b0000_0000;
@@ -2563,8 +2618,11 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(is_state_work == 1'b1) begin
-        current_input_d <= input_d & input_mask_d;
+    if(input_valid) begin
+        current_input_d <= input_d;
+    end
+    else if (is_state_work == 1'b1) begin
+        current_input_d  <= current_input_d & input_mask_d;
     end
     else begin
         current_input_d <= 8'b0000_0000;
@@ -2572,8 +2630,11 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(is_state_work == 1'b1) begin
-        current_input_e <= input_e & input_mask_e;
+    if(input_valid) begin
+        current_input_e <= input_e;
+    end
+    else if (is_state_work == 1'b1) begin
+        current_input_e  <= current_input_e & input_mask_e;
     end
     else begin
         current_input_e <= 8'b0000_0000;
@@ -2581,8 +2642,11 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if(is_state_work == 1'b1) begin
-        current_input_f <= input_f & input_mask_f;
+    if(input_valid) begin
+        current_input_f <= input_f;
+    end
+    else if (is_state_work == 1'b1) begin
+        current_input_f  <= current_input_f & input_mask_f;
     end
     else begin
         current_input_f <= 8'b0000_0000;
@@ -2669,16 +2733,22 @@ always@(posedge clk)begin
     if(rst) begin
         all_zeros_iter1 <= 1'b0;
     end
-    else if(is_state_work)begin
+    else if(is_state_done) begin
+        all_zeros_iter1 <= 1'b0;
+    end
+    else if(is_state_work_iter0)begin
         all_zeros_iter1 <= all_zeros;
+    end
+    else begin
+        all_zeros_iter1 <= 1'b0;
     end
 end
 
 always@(posedge clk)begin
     if(rst) begin
-        all_zeros_iter1 <= 1'b0;
+        all_zeros_iter2 <= 1'b0;
     end
-    else if(is_state_work)begin
+    else begin
         all_zeros_iter2 <= all_zeros_iter1;
     end
 end
@@ -3700,10 +3770,10 @@ assign add3_result_f0 = $signed(add2_result_f0) + $signed(add2_result_f8);
 always@(posedge clk) begin
     if (rst)
         acc_result_0 <= 32'h0000_0000;
-    else if ((is_state_done | is_state_idle) & input_valid) begin
+    else if (input_valid) begin
         acc_result_0 <= acc_0;
     end
-    else if(add1_valid) begin
+    else if(is_state_work) begin
         acc_result_0 <= $signed(acc_result_0) + $signed(add3_result_00);
     end
 end
@@ -3712,10 +3782,10 @@ end
 always@(posedge clk) begin
     if (rst)
         acc_result_1 <= 32'h0000_0000;
-    else if ((is_state_done | is_state_idle) & input_valid) begin
+    else if (input_valid) begin
         acc_result_1 <= acc_1;
     end
-    else if(add1_valid) begin
+    else if(is_state_work) begin
         acc_result_1 <= $signed(acc_result_1) + $signed(add3_result_10);
     end
 end
@@ -3724,10 +3794,10 @@ end
 always@(posedge clk) begin
     if (rst)
         acc_result_2 <= 32'h0000_0000;
-    else if ((is_state_done | is_state_idle) & input_valid) begin
+    else if (input_valid) begin
         acc_result_2 <= acc_2;
     end
-    else if(add1_valid) begin
+    else if(is_state_work) begin
         acc_result_2 <= $signed(acc_result_2) + $signed(add3_result_20);
     end
 end
@@ -3736,10 +3806,10 @@ end
 always@(posedge clk) begin
     if (rst)
         acc_result_3 <= 32'h0000_0000;
-    else if ((is_state_done | is_state_idle) & input_valid) begin
+    else if (input_valid) begin
         acc_result_3 <= acc_3;
     end
-    else if(add1_valid) begin
+    else if(is_state_work) begin
         acc_result_3 <= $signed(acc_result_3) + $signed(add3_result_30);
     end
 end
@@ -3748,10 +3818,10 @@ end
 always@(posedge clk) begin
     if (rst)
         acc_result_4 <= 32'h0000_0000;
-    else if ((is_state_done | is_state_idle) & input_valid) begin
+    else if (input_valid) begin
         acc_result_4 <= acc_4;
     end
-    else if(add1_valid) begin
+    else if(is_state_work) begin
         acc_result_4 <= $signed(acc_result_4) + $signed(add3_result_40);
     end
 end
@@ -3760,10 +3830,10 @@ end
 always@(posedge clk) begin
     if (rst)
         acc_result_5 <= 32'h0000_0000;
-    else if ((is_state_done | is_state_idle) & input_valid) begin
+    else if (input_valid) begin
         acc_result_5 <= acc_5;
     end
-    else if(add1_valid) begin
+    else if(is_state_work) begin
         acc_result_5 <= $signed(acc_result_5) + $signed(add3_result_50);
     end
 end
@@ -3772,10 +3842,10 @@ end
 always@(posedge clk) begin
     if (rst)
         acc_result_6 <= 32'h0000_0000;
-    else if ((is_state_done | is_state_idle) & input_valid) begin
+    else if (input_valid) begin
         acc_result_6 <= acc_6;
     end
-    else if(add1_valid) begin
+    else if(is_state_work) begin
         acc_result_6 <= $signed(acc_result_6) + $signed(add3_result_60);
     end
 end
@@ -3784,10 +3854,10 @@ end
 always@(posedge clk) begin
     if (rst)
         acc_result_7 <= 32'h0000_0000;
-    else if ((is_state_done | is_state_idle) & input_valid) begin
+    else if (input_valid) begin
         acc_result_7 <= acc_7;
     end
-    else if(add1_valid) begin
+    else if(is_state_work) begin
         acc_result_7 <= $signed(acc_result_7) + $signed(add3_result_70);
     end
 end
@@ -3796,10 +3866,10 @@ end
 always@(posedge clk) begin
     if (rst)
         acc_result_8 <= 32'h0000_0000;
-    else if ((is_state_done | is_state_idle) & input_valid) begin
+    else if (input_valid) begin
         acc_result_8 <= acc_8;
     end
-    else if(add1_valid) begin
+    else if(is_state_work) begin
         acc_result_8 <= $signed(acc_result_8) + $signed(add3_result_80);
     end
 end
@@ -3808,10 +3878,10 @@ end
 always@(posedge clk) begin
     if (rst)
         acc_result_9 <= 32'h0000_0000;
-    else if ((is_state_done | is_state_idle) & input_valid) begin
+    else if (input_valid) begin
         acc_result_9 <= acc_9;
     end
-    else if(add1_valid) begin
+    else if(is_state_work) begin
         acc_result_9 <= $signed(acc_result_9) + $signed(add3_result_90);
     end
 end
@@ -3820,10 +3890,10 @@ end
 always@(posedge clk) begin
     if (rst)
         acc_result_a <= 32'h0000_0000;
-    else if ((is_state_done | is_state_idle) & input_valid) begin
+    else if (input_valid) begin
         acc_result_a <= acc_a;
     end
-    else if(add1_valid) begin
+    else if(is_state_work) begin
         acc_result_a <= $signed(acc_result_a) + $signed(add3_result_a0);
     end
 end
@@ -3832,10 +3902,10 @@ end
 always@(posedge clk) begin
     if (rst)
         acc_result_b <= 32'h0000_0000;
-    else if ((is_state_done | is_state_idle) & input_valid) begin
+    else if (input_valid) begin
         acc_result_b <= acc_b;
     end
-    else if(add1_valid) begin
+    else if(is_state_work) begin
         acc_result_b <= $signed(acc_result_b) + $signed(add3_result_b0);
     end
 end
@@ -3844,10 +3914,10 @@ end
 always@(posedge clk) begin
     if (rst)
         acc_result_c <= 32'h0000_0000;
-    else if ((is_state_done | is_state_idle) & input_valid) begin
+    else if (input_valid) begin
         acc_result_c <= acc_c;
     end
-    else if(add1_valid) begin
+    else if(is_state_work) begin
         acc_result_c <= $signed(acc_result_c) + $signed(add3_result_c0);
     end
 end
@@ -3856,10 +3926,10 @@ end
 always@(posedge clk) begin
     if (rst)
         acc_result_d <= 32'h0000_0000;
-    else if ((is_state_done | is_state_idle) & input_valid) begin
+    else if (input_valid) begin
         acc_result_d <= acc_d;
     end
-    else if(add1_valid) begin
+    else if(is_state_work) begin
         acc_result_d <= $signed(acc_result_d) + $signed(add3_result_d0);
     end
 end
@@ -3868,10 +3938,10 @@ end
 always@(posedge clk) begin
     if (rst)
         acc_result_e <= 32'h0000_0000;
-    else if ((is_state_done | is_state_idle) & input_valid) begin
+    else if (input_valid) begin
         acc_result_e <= acc_e;
     end
-    else if(add1_valid) begin
+    else if(is_state_work) begin
         acc_result_e <= $signed(acc_result_e) + $signed(add3_result_e0);
     end
 end
@@ -3880,10 +3950,10 @@ end
 always@(posedge clk) begin
     if (rst)
         acc_result_f <= 32'h0000_0000;
-    else if ((is_state_done | is_state_idle) & input_valid) begin
+    else if (input_valid) begin
         acc_result_f <= acc_f;
     end
-    else if(add1_valid) begin
+    else if(is_state_work) begin
         acc_result_f <= $signed(acc_result_f) + $signed(add3_result_f0);
     end
 end
@@ -3905,23 +3975,23 @@ assign output_result_d = acc_result_d[7:0];
 assign output_result_e = acc_result_e[7:0];
 assign output_result_f = acc_result_f[7:0];
 
-// acc result
-assign a_out_0 = acc_result_0;
-assign a_out_1 = acc_result_1;
-assign a_out_2 = acc_result_2;
-assign a_out_3 = acc_result_3;
-assign a_out_4 = acc_result_4;
-assign a_out_5 = acc_result_5;
-assign a_out_6 = acc_result_6;
-assign a_out_7 = acc_result_7;
-assign a_out_8 = acc_result_8;
-assign a_out_9 = acc_result_9;
-assign a_out_a = acc_result_a;
-assign a_out_b = acc_result_b;
-assign a_out_c = acc_result_c;
-assign a_out_d = acc_result_d;
-assign a_out_e = acc_result_e;
-assign a_out_f = acc_result_f;
+// acc result & reset
+assign a_out_0 = gemm_reset ? 0 : acc_result_0;
+assign a_out_1 = gemm_reset ? 0 : acc_result_1;
+assign a_out_2 = gemm_reset ? 0 : acc_result_2;
+assign a_out_3 = gemm_reset ? 0 : acc_result_3;
+assign a_out_4 = gemm_reset ? 0 : acc_result_4;
+assign a_out_5 = gemm_reset ? 0 : acc_result_5;
+assign a_out_6 = gemm_reset ? 0 : acc_result_6;
+assign a_out_7 = gemm_reset ? 0 : acc_result_7;
+assign a_out_8 = gemm_reset ? 0 : acc_result_8;
+assign a_out_9 = gemm_reset ? 0 : acc_result_9;
+assign a_out_a = gemm_reset ? 0 : acc_result_a;
+assign a_out_b = gemm_reset ? 0 : acc_result_b;
+assign a_out_c = gemm_reset ? 0 : acc_result_c;
+assign a_out_d = gemm_reset ? 0 : acc_result_d;
+assign a_out_e = gemm_reset ? 0 : acc_result_e;
+assign a_out_f = gemm_reset ? 0 : acc_result_f;
 
 // out result
 assign o_0 = output_result_0;
