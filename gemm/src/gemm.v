@@ -1599,7 +1599,7 @@ always @ (*) begin  // iter out done
 end
 
 // in_valid
-always @ (*) begin
+always @ (posedge ap_clk) begin
     if (((ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage1))) begin
         gemm_in_valid_reg = 1'b1;
     end else begin
